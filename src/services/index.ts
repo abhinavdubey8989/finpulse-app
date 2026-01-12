@@ -22,8 +22,8 @@ export const authService = {
     console.log('Login API full response:', response);
     console.log('Login API response.data:', response.data);
     
-    // Get data from response.data.data
-    const loginData = response.data.data;
+    // Get data from response.data.apiData
+    const loginData = response.data.apiData;
     
     console.log('Extracted login data:', loginData);
     
@@ -90,7 +90,7 @@ export const expenseService = {
     );
     
     console.log('Create expense response:', response.data);
-    return response.data.data;
+    return response.data.apiData;
   },
 
   getExpenses: async (userId: string): Promise<Expense[]> => {
@@ -98,6 +98,6 @@ export const expenseService = {
       `/expense/personal/${userId}`
     );
     
-    return response.data.data;
+    return response.data.apiData;
   },
 };
