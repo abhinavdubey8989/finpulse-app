@@ -12,7 +12,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
-  userId: number;
+  userId: string;
   personalExpenseSettings: unknown[];
 }
 
@@ -30,7 +30,7 @@ export interface Expense {
 }
 
 export interface CreateExpenseRequest {
-  userId: number;
+  userId: string;
   year: number;
   month: string;
   category: string;

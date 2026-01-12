@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import md5 from 'md5';
 import { authService } from '../services';
+import { authStorage } from '../utils/authStorage';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,16 +12,32 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // If already authenticated, redirect to create expense
+    if (authStorage.isAuthenticated()) {
+      navigate('/create-expense', { replace: true });
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      await authService.login(email, password);
-      navigate('/expenses');
+      // Hash the password using MD5 before sending to API
+      const hashedPassword = md5(password);
+      console.log('Attempting login with:', { email, hashedPassword });
+      await authService.login(email, hashedPassword);
+      console.log('Login successful, redirecting...');
+      
+      // Use setTimeout to ensure localStorage is fully written
+      setTimeout(() => {
+        navigate('/create-expense', { replace: true });
+      }, 100);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { authStorage } from './utils/authStorage';
 import LoginPage from './pages/LoginPage';
 import CreateExpensePage from './pages/CreateExpensePage';
 import ExpenseListPage from './pages/ExpenseListPage';
@@ -7,15 +6,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
-  const isAuthenticated = authStorage.isAuthenticated();
-
   return (
     <Router>
       <Routes>
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Navigate to="/expenses" replace /> : <LoginPage />} 
-        />
+        <Route path="/" element={<LoginPage />} />
         <Route
           path="/expenses"
           element={

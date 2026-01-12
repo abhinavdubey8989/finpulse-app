@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { expenseService } from '../services';
+import { authStorage } from '../utils/authStorage';
 import type { ExpenseCategory } from '../types';
 
 const EXPENSE_CATEGORIES: ExpenseCategory[] = [
@@ -28,9 +29,25 @@ const CreateExpensePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check authentication status on mount
+    const token = authStorage.getToken();
+    const userId = authStorage.getUserId();
+    console.log('CreateExpensePage mounted - Auth check:');
+    console.log('  Token:', token);
+    console.log('  UserId:', userId);
+    
+    if (!token || !userId) {
+      console.error('Not authenticated on CreateExpensePage mount, redirecting to login');
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    console.log('Form submitted');
 
     // Validation
     if (description.length < 3 || description.length > 40) {
@@ -51,6 +68,14 @@ const CreateExpensePage = () => {
       const currentMonth = MONTHS[currentDate.getMonth()];
       const currentYear = currentDate.getFullYear();
 
+      console.log('Creating expense with data:', {
+        category,
+        amount: amountValue,
+        description,
+        month: currentMonth,
+        year: currentYear,
+      });
+
       await expenseService.createExpense({
         category,
         amount: amountValue,
@@ -59,10 +84,12 @@ const CreateExpensePage = () => {
         year: currentYear,
       });
 
+      console.log('Expense created successfully');
       // Redirect to expense list page
       navigate('/expenses');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create expense. Please try again.');
+      console.error('Error creating expense:', err);
+      setError(err.message || err.response?.data?.message || 'Failed to create expense. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -29,9 +29,9 @@ curl --location 'http://localhost:8055/api/v1/auth/login' \
     "respId": ""
 }
 ```
-
     - The `accessToken` & `userId`received must be stored in the front-end local-storage 
     - The `accessToken` must be passed into `Authorization` header as `Bearer <token>` for all subsequest HTTP requests
+    - Upon successful login, goto the form to fill to add expense
 
 
 

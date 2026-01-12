@@ -19,12 +19,46 @@ export const authService = {
       } as LoginRequest
     );
     
-    // Store token and userId in localStorage
-    const { accessToken, userId } = response.data.data;
-    authStorage.setToken(accessToken);
-    authStorage.setUserId(userId);
+    console.log('Login API full response:', response);
+    console.log('Login API response.data:', response.data);
     
-    return response.data.data;
+    // Get data from response.data.data
+    const loginData = response.data.data;
+    
+    console.log('Extracted login data:', loginData);
+    
+    if (!loginData) {
+      console.error('No login data found in response');
+      throw new Error('Invalid API response structure');
+    }
+    
+    const { accessToken, userId } = loginData;
+    
+    console.log('Extracted accessToken:', accessToken);
+    console.log('Extracted userId:', userId, 'type:', typeof userId);
+    
+    if (!accessToken || !userId) {
+      console.error('Invalid response: missing accessToken or userId', loginData);
+      throw new Error('Invalid response: missing accessToken or userId');
+    }
+    
+    // Store userId as string
+    authStorage.setToken(accessToken);
+    authStorage.setUserId(String(userId));
+    
+    // Verify storage immediately
+    const storedToken = authStorage.getToken();
+    const storedUserId = authStorage.getUserId();
+    console.log('Verification after storage:');
+    console.log('  - stored token:', storedToken);
+    console.log('  - stored userId:', storedUserId);
+    
+    if (!storedToken || !storedUserId) {
+      console.error('Failed to store auth data in localStorage');
+      throw new Error('Failed to store authentication data');
+    }
+    
+    return loginData;
   },
 
   logout: (): void => {
@@ -37,22 +71,29 @@ export const expenseService = {
     expenseData: Omit<CreateExpenseRequest, 'userId'>
   ): Promise<CreateExpenseResponse> => {
     const userId = authStorage.getUserId();
+    console.log('Creating expense - userId from storage:', userId);
+    
     if (!userId) {
+      console.error('User not authenticated - no userId in localStorage');
       throw new Error('User not authenticated');
     }
 
+    const payload = {
+      userId,
+      ...expenseData,
+    };
+    console.log('Sending create expense request:', payload);
+
     const response = await apiClient.post<ApiResponse<CreateExpenseResponse>>(
       '/expense/personal',
-      {
-        userId,
-        ...expenseData,
-      }
+      payload
     );
     
+    console.log('Create expense response:', response.data);
     return response.data.data;
   },
 
-  getExpenses: async (userId: number): Promise<Expense[]> => {
+  getExpenses: async (userId: string): Promise<Expense[]> => {
     const response = await apiClient.get<ApiResponse<Expense[]>>(
       `/expense/personal/${userId}`
     );

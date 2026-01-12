@@ -3,20 +3,23 @@ const USER_ID_KEY = 'userId';
 
 export const authStorage = {
   setToken: (token: string): void => {
+    console.log('Setting token in localStorage');
     localStorage.setItem(TOKEN_KEY, token);
   },
 
   getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
+    return token;
   },
 
-  setUserId: (userId: number): void => {
-    localStorage.setItem(USER_ID_KEY, userId.toString());
+  setUserId: (userId: string): void => {
+    console.log('Setting userId in localStorage:', userId);
+    localStorage.setItem(USER_ID_KEY, userId);
   },
 
-  getUserId: (): number | null => {
+  getUserId: (): string | null => {
     const userId = localStorage.getItem(USER_ID_KEY);
-    return userId ? parseInt(userId, 10) : null;
+    return userId;
   },
 
   clearAuth: (): void => {
