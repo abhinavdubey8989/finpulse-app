@@ -1,6 +1,6 @@
 // API Response wrapper
 export interface ApiResponse<T> {
-  data: T;
+  apiData: T;
   respId: string;
 }
 

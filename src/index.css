@@ -1,14 +1,115 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+/* FinPulse Design System - Glassmorphism Purple Theme */
+
+@theme {
+  --color-border: hsl(260 30% 80% / 0.3);
+  --color-input: hsl(260 30% 80% / 0.2);
+  --color-ring: hsl(175 70% 50%);
+  --color-background: hsl(260 60% 50%);
+  --color-foreground: hsl(0 0% 100%);
+  --color-primary: hsl(175 70% 45%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(260 30% 70% / 0.3);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(260 20% 80% / 0.2);
+  --color-muted-foreground: hsl(260 20% 90%);
+  --color-accent: hsl(175 70% 50%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-popover: hsl(260 40% 40%);
+  --color-popover-foreground: hsl(0 0% 100%);
+  --color-card: hsl(260 40% 60% / 0.2);
+  --color-card-foreground: hsl(0 0% 100%);
+  
+  --radius-lg: 0.75rem;
+  --radius-md: calc(0.75rem - 2px);
+  --radius-sm: calc(0.75rem - 4px);
 }
 
-#root {
-  min-height: 100vh;
+@layer base {
+  :root {
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(200 80% 50%) 0%, hsl(175 70% 45%) 100%);
+    --gradient-background: linear-gradient(135deg, hsl(280 50% 45%) 0%, hsl(260 60% 50%) 50%, hsl(240 50% 55%) 100%);
+    
+    /* Glassmorphism */
+    --glass-bg: hsla(260, 40%, 60%, 0.15);
+    --glass-border: hsla(260, 30%, 80%, 0.25);
+    --glass-shadow: 0 8px 32px hsla(260, 60%, 20%, 0.3);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(260 30% 80% / 0.3);
+  }
+
+  body {
+    background-color: hsl(260 60% 50%);
+    color: hsl(0 0% 100%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--gradient-background);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-input {
+    background: hsla(260, 30%, 80%, 0.15);
+    border: 1px solid hsla(260, 30%, 80%, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glass-input:focus {
+    border-color: hsla(175, 70%, 50%, 0.5);
+    box-shadow: 0 0 0 2px hsla(175, 70%, 50%, 0.2);
+  }
+
+  .btn-gradient {
+    background: var(--gradient-primary);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px hsla(175, 70%, 50%, 0.4);
+  }
+
+  .social-btn {
+    background: hsla(0, 0%, 100%, 0.9);
+    color: hsl(260, 40%, 30%);
+    transition: all 0.2s ease;
+  }
+
+  .social-btn:hover {
+    background: hsla(0, 0%, 100%, 1);
+    transform: translateY(-1px);
+  }
+
+  .link-accent {
+    color: hsl(175, 70%, 55%);
+    transition: color 0.2s ease;
+  }
+
+  .link-accent:hover {
+    color: hsl(175, 70%, 65%);
+  }
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px hsla(0, 0%, 0%, 0.2);
+  }
 }
