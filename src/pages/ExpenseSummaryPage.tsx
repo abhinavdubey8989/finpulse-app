@@ -202,7 +202,7 @@ const ExpenseSummaryPage = () => {
         {!isLoading && summaryData && summaryData.elements.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-semibold text-gray-800">Overall Monthly Progress</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Total Monthly Expense</h3>
               <span className="text-sm font-medium text-gray-600">
                 ₹{Math.round(summaryData.totalExpenseAmount)} / ₹{summaryData.elements.reduce((sum, el) => sum + el.monthlyUpperLimit, 0)}
               </span>

@@ -24,6 +24,7 @@ const ExpenseListPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,7 +62,29 @@ const ExpenseListPage = () => {
     });
   };
 
+  const getSortedExpenses = () => {
+    const sorted = [...expenses];
+    
+    switch (sortBy) {
+      case 'newest':
+        return sorted.sort((a, b) => 
+          new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+        );
+      case 'oldest':
+        return sorted.sort((a, b) => 
+          new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
+        );
+      case 'amount-asc':
+        return sorted.sort((a, b) => a.amount - b.amount);
+      case 'amount-desc':
+        return sorted.sort((a, b) => b.amount - a.amount);
+      default:
+        return sorted;
+    }
+  };
+
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const sortedExpenses = getSortedExpenses();
 
   if (isLoading) {
     return (
@@ -125,6 +148,23 @@ const ExpenseListPage = () => {
           </div>
         )}
 
+        {/* Sort Dropdown */}
+        {expenses.length > 0 && (
+          <div className="mb-4">
+            <select
+              id="sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="block w-64 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount-asc">Amount Ascending</option>
+              <option value="amount-desc">Amount Descending</option>
+            </select>
+          </div>
+        )}
+
         {/* Expense List */}
         {expenses.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -138,7 +178,7 @@ const ExpenseListPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {expenses.map((expense) => (
+            {sortedExpenses.map((expense) => (
               <div
                 key={expense.id}
                 className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
