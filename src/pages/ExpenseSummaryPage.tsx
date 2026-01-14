@@ -29,6 +29,7 @@ const ExpenseSummaryPage = () => {
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [sortBy, setSortBy] = useState<string>('amount-desc');
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [summaryData, setSummaryData] = useState<{
     elements: ExpenseSummaryElement[];
     numberOfExpenses: number;
@@ -40,6 +41,18 @@ const ExpenseSummaryPage = () => {
   const handleLogout = () => {
     authStorage.clearAuth();
     navigate('/', { replace: true });
+  };
+
+  const toggleCardExpansion = (categoryId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
   };
 
   useEffect(() => {
@@ -276,14 +289,18 @@ const ExpenseSummaryPage = () => {
                   } else if (usagePercent >= 51) {
                     cardColor = '#b3b36f'; // 51-90%
                   }
+
+                  const isExpanded = expandedCards.has(element.categoryId);
+                  const hasTagBreakup = element.tagBreakup && element.tagBreakup.length > 0;
                   
                   return (
                     <div
                       key={element.categoryId}
-                      className="rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
-                      style={{ backgroundColor: cardColor }}
+                      className="rounded-lg shadow-md p-4 hover:shadow-lg transition-all"
+                      style={{ backgroundColor: cardColor, minHeight: '200px' }}
                     >
-                      <div className="flex justify-between items-start mb-3">
+                      {/* Header with category name and toggle button */}
+                      <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-2">
                           <h3 className="text-base font-semibold text-white capitalize">
                             {element.category}
@@ -306,31 +323,58 @@ const ExpenseSummaryPage = () => {
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Toggle button */}
+                        {hasTagBreakup && (
+                          <button
+                            onClick={() => toggleCardExpansion(element.categoryId)}
+                            className="text-white/90 hover:text-white transition-colors"
+                            aria-label={isExpanded ? "Hide details" : "Show details"}
+                          >
+                            <svg
+                              className={`w-5 h-5 transition-transform ${
+                                isExpanded ? '' : 'rotate-180'
+                              }`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        )}
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-white/80">Spent:</span>
-                          <span className="text-lg font-bold text-white">
+                      {/* Stats - More compact when showing details */}
+                      <div className="grid grid-cols-3 gap-2 mb-2">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-white/70">Spent:</span>
+                          <span className="text-sm font-bold text-white">
                             ₹{Math.round(element.monthlyExpenseDone)}
                           </span>
                         </div>
                         
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-white/80">Limit:</span>
-                          <span className="text-base font-semibold text-white">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-white/70">Limit:</span>
+                          <span className="text-sm font-semibold text-white">
                             ₹{element.monthlyUpperLimit}
                           </span>
                         </div>
 
-                        {/* Progress Bar */}
-                        <div className="mt-3">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs text-white/70">Usage</span>
-                            <span className="text-xs font-medium text-white">
-                              {Math.ceil(usagePercent)}%
-                            </span>
-                          </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-white/70">Usage:</span>
+                          <span className="text-sm font-semibold text-white">
+                            {Math.ceil(usagePercent)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress Bar OR Tag Breakdown - Same space */}
+                      {!isExpanded ? (
+                        <div className="mt-2">
                           <div className="w-full bg-white/30 rounded-full h-1.5">
                             <div
                               className="h-1.5 rounded-full bg-white"
@@ -340,13 +384,26 @@ const ExpenseSummaryPage = () => {
                             ></div>
                           </div>
                         </div>
-
-                        {element.monthlyExpenseDone > element.monthlyUpperLimit && (
-                          <div className="mt-1.5 text-xs text-white font-medium">
-                            ⚠ Over budget by ₹{(element.monthlyExpenseDone - element.monthlyUpperLimit).toFixed(2)}
+                      ) : (
+                        hasTagBreakup && (
+                          <div className="mt-2">
+                            <h4 className="text-xs font-semibold text-white/90 mb-2">Tag Breakdown:</h4>
+                            <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto">
+                              {[...element.tagBreakup]
+                                .sort((a, b) => b.expenseAmount - a.expenseAmount)
+                                .map((tag) => (
+                                  <div
+                                    key={tag.id}
+                                    className="flex justify-between items-center bg-white/10 rounded px-2.5 py-1.5"
+                                  >
+                                    <span className="text-xs text-white font-medium truncate">{tag.name}</span>
+                                    <span className="text-xs text-white font-bold ml-1">₹{Math.round(tag.expenseAmount)}</span>
+                                  </div>
+                                ))}
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        )
+                      )}
                     </div>
                   );
                   })}

@@ -90,12 +90,19 @@ export interface ExpenseSummaryRequest {
   month: number;
 }
 
+export interface TagBreakup {
+  id: string;
+  name: string;
+  expenseAmount: number;
+}
+
 export interface ExpenseSummaryElement {
   category: string;
   categoryDescription: string;
   categoryId: string;
   monthlyExpenseDone: number;
   monthlyUpperLimit: number;
+  tagBreakup: TagBreakup[];
 }
 
 export interface ExpenseSummaryResponse {

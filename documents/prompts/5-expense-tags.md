@@ -116,3 +116,67 @@ curl --location 'http://localhost:8055/api/v1/expense/personal' \
 }'
 ```
 
+
+
+# 2. For View-summary page
+- The response of summary API is updated to support tags as shown below
+- Now the cards must be update, to add a down carrot saying `see details`
+- when user clicks on it, the card expands vertically & shows `tagBreakup` in descding order of `expenseAmount`
+
+```
+{
+    "apiData": {
+        "elements": [
+            {
+                "category": "eat-out",
+                "categoryDescription": "eating out",
+                "categoryId": "5e7b5a08-27b8-4c77-b0d3-d39b32a5badd",
+                "monthlyExpenseDone": 60,
+                "monthlyUpperLimit": 5600,
+                "tagBreakup": [
+                    {
+                        "expenseAmount": 60,
+                        "id": "Others",
+                        "name": "Others"
+                    }
+                ]
+            },
+            {
+                "category": "shooping",
+                "categoryDescription": "all shopping",
+                "categoryId": "1104866c-8399-4852-9b1a-c470c2649871",
+                "monthlyExpenseDone": 500,
+                "monthlyUpperLimit": 2000,
+                "tagBreakup": [
+                    {
+                        "expenseAmount": 0,
+                        "id": "f00e11dd-1821-4169-9314-b976c56b7247",
+                        "name": "cosmetic"
+                    },
+                    {
+                        "expenseAmount": 500,
+                        "id": "014ab6e0-2e68-4059-a282-8c1d106be783",
+                        "name": "non-cosmetic"
+                    },
+                    {
+                        "expenseAmount": 0,
+                        "id": "Others",
+                        "name": "Others"
+                    }
+                ]
+            }
+        ],
+        "month": 1,
+        "numberOfExpenses": 2,
+        "totalExpenseAmount": 560,
+        "userId": "550e8400-e29b-41d4-a716-446655440000",
+        "year": 2026
+    },
+    "respId": ""
+}
+```
+===
+- Right now, when i click on see details of of one card, the details of all card get expanded
+- Only the clicked card should expand
+- Let drop the expand idea, lets do another thing
+- Do up carrot icon, when user click, the sptn, limit, usage % moves up , the progress-bar goes away making space for details & details show up in majority of card space
