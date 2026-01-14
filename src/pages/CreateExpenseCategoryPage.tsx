@@ -203,100 +203,108 @@ const CreateExpenseCategoryPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="category" className="text-sm font-medium text-gray-700 pt-2">
                 Category Name
               </label>
-              <input
-                type="text"
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                minLength={4}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
-                placeholder="Enter category name (minimum 4 characters)"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                {category.length} characters
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <input
-                type="text"
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                minLength={4}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
-                placeholder="Enter description (minimum 4 characters)"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                {description.length} characters
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="monthlyUpperLimit" className="block text-sm font-medium text-gray-700 mb-2">
-                Monthly Upper Limit (₹)
-              </label>
-              <input
-                type="number"
-                id="monthlyUpperLimit"
-                value={monthlyUpperLimit}
-                onChange={(e) => setMonthlyUpperLimit(e.target.value)}
-                step="1"
-                min="1"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
-                placeholder="Enter monthly upper limit (whole number only)"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Enter a positive integer only (no decimals)
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                Tags (Optional)
-              </label>
-              <div className="w-full px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent bg-white min-h-[42px] flex flex-wrap gap-2 items-center">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-purple-900 focus:outline-none"
-                      aria-label={`Remove ${tag}`}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
+              <div>
                 <input
                   type="text"
-                  id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
-                  className="flex-1 min-w-[120px] outline-none text-gray-900 bg-transparent"
-                  placeholder={tags.length === 0 ? "Enter tag and press Enter (min 3 chars)" : "Add another tag..."}
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  minLength={4}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                  placeholder="Enter category name (minimum 4 characters)"
                 />
+                {/* <p className="text-sm text-gray-500 mt-1">
+                  {category.length} characters
+                </p> */}
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Press Enter to add a tag (minimum 3 characters). Tags are sub-categories of the expense category.
-              </p>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="description" className="text-sm font-medium text-gray-700 pt-2">
+                Description
+              </label>
+              <div>
+                <input
+                  type="text"
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  minLength={4}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                  placeholder="Enter description (minimum 4 characters)"
+                />
+                {/* <p className="text-sm text-gray-500 mt-1">
+                  {description.length} characters
+                </p> */}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="monthlyUpperLimit" className="text-sm font-medium text-gray-700 pt-2">
+                Monthly Upper Limit (₹)
+              </label>
+              <div>
+                <input
+                  type="number"
+                  id="monthlyUpperLimit"
+                  value={monthlyUpperLimit}
+                  onChange={(e) => setMonthlyUpperLimit(e.target.value)}
+                  step="1"
+                  min="1"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                  placeholder="Maximum allowed spend in a month for this category"
+                />
+                {/* <p className="text-sm text-gray-500 mt-1">
+                  Enter a positive integer only (no decimals)
+                </p> */}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="tags" className="text-sm font-medium text-gray-700 pt-2">
+                Tags (Optional)
+              </label>
+              <div>
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent bg-white min-h-[42px] flex flex-wrap gap-2 items-center">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-purple-900 focus:outline-none"
+                        aria-label={`Remove ${tag}`}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    id="tags"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                    className="flex-1 min-w-[120px] outline-none text-gray-900 bg-transparent"
+                    placeholder={tags.length === 0 ? "Enter tag and press Enter (min 3 chars)" : "Add another tag..."}
+                  />
+                </div>
+                {/* <p className="text-sm text-gray-500 mt-1">
+                  Press Enter to add a tag (minimum 3 characters). Tags are sub-categories of the expense category.
+                </p> */}
+              </div>
             </div>
 
             {toast && (
@@ -337,26 +345,26 @@ const CreateExpenseCategoryPage = () => {
             {isLoadingCategories ? (
               <div className="text-center text-gray-600">Loading categories...</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {existingCategories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow relative"
+                    className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow relative"
                   >
                     {/* Three dots menu */}
                     <button
                       onClick={() => handleEditCategory(cat)}
-                      className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none"
                       aria-label="Edit category"
                     >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                       </svg>
                     </button>
 
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2 pr-8">{cat.category}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{cat.description}</p>
-                    <p className="text-sm font-medium text-purple-600 mb-3">
+                    <h3 className="text-base font-semibold text-gray-800 mb-1 pr-6">{cat.category}</h3>
+                    <p className="text-xs text-gray-600 mb-1">{cat.description}</p>
+                    <p className="text-xs font-medium text-purple-600 mb-2">
                       Limit: ₹{cat.monthlyUpperLimit}
                     </p>
                     {cat.tags && cat.tags.length > 0 && (
@@ -364,7 +372,7 @@ const CreateExpenseCategoryPage = () => {
                         {cat.tags.map((tag) => (
                           <span
                             key={tag.id}
-                            className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
+                            className="inline-block bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium"
                           >
                             {tag.name}
                           </span>
@@ -583,16 +591,17 @@ const EditCategoryModal = ({ category, onClose, onSuccess }: EditCategoryModalPr
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Existing Tags (click to edit)
                 </label>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
                   {existingTags.map((tag) => (
-                    <div key={tag.id} className="flex items-center gap-2">
+                    <div key={tag.id}>
                       {tag.isEditing ? (
-                        <>
+                        <div className="flex items-center gap-2">
                           <input
                             type="text"
                             value={tag.newName}
                             onChange={(e) => updateTagName(tag.id, e.target.value)}
-                            className="flex-1 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
+                            className="px-3 py-1 border border-gray-300 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm bg-white text-gray-900"
+                            autoFocus
                           />
                           <button
                             type="button"
@@ -601,20 +610,18 @@ const EditCategoryModal = ({ category, onClose, onSuccess }: EditCategoryModalPr
                           >
                             Done
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <span className="flex-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-                            {tag.newName}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => toggleEditTag(tag.id)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Edit
-                          </button>
-                        </>
+                        <button
+                          type="button"
+                          onClick={() => toggleEditTag(tag.id)}
+                          className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium hover:bg-purple-200 transition"
+                        >
+                          {tag.newName}
+                          <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
                       )}
                     </div>
                   ))}

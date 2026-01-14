@@ -176,43 +176,45 @@ const CreateExpensePage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="category" className="text-sm font-medium text-gray-700 pt-2">
                 Expense Category
               </label>
-              <select
-                id="category"
-                value={categoryId}
-                onChange={(e) => {
-                  console.log('Category changed to:', e.target.value);
-                  setCategoryId(e.target.value);
-                  setSelectedTagId(''); // Reset tag selection when category changes
-                }}
-                disabled={categoriesLoading || expenseCategories.length === 0}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white"
-              >
-                {categoriesLoading ? (
-                  <option value="">Loading categories...</option>
-                ) : expenseCategories.length === 0 ? (
-                  <option value="">No categories available</option>
-                ) : (
-                  expenseCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.category}
-                    </option>
-                  ))
+              <div>
+                <select
+                  id="category"
+                  value={categoryId}
+                  onChange={(e) => {
+                    console.log('Category changed to:', e.target.value);
+                    setCategoryId(e.target.value);
+                    setSelectedTagId(''); // Reset tag selection when category changes
+                  }}
+                  disabled={categoriesLoading || expenseCategories.length === 0}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white"
+                >
+                  {categoriesLoading ? (
+                    <option value="">Loading categories...</option>
+                  ) : expenseCategories.length === 0 ? (
+                    <option value="">No categories available</option>
+                  ) : (
+                    expenseCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.category}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {!categoriesLoading && expenseCategories.length > 0 && categoryId && (
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    {expenseCategories.find(c => c.id === categoryId)?.description}
+                  </p>
                 )}
-              </select>
-              {!categoriesLoading && expenseCategories.length > 0 && categoryId && (
-                <p className="text-sm text-gray-500 mt-1">
-                  {expenseCategories.find(c => c.id === categoryId)?.description}
-                </p>
-              )}
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="amount" className="text-sm font-medium text-gray-700 pt-2">
                 Amount (₹)
               </label>
               <input
@@ -230,50 +232,54 @@ const CreateExpensePage = () => {
 
             {/* Tags Selection */}
             {categoryId && expenseCategories.find(c => c.id === categoryId)?.tags && expenseCategories.find(c => c.id === categoryId)!.tags.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                <label className="text-sm font-medium text-gray-700 pt-2">
                   Select Tag (Optional)
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {expenseCategories.find(c => c.id === categoryId)!.tags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => setSelectedTagId(selectedTagId === tag.id ? '' : tag.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                        selectedTagId === tag.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                      }`}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    {expenseCategories.find(c => c.id === categoryId)!.tags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => setSelectedTagId(selectedTagId === tag.id ? '' : tag.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                          selectedTagId === tag.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    Click to select a tag. You can select only one tag per expense.
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Click to select a tag. You can select only one tag per expense.
-                </p>
               </div>
             )}
 
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="description" className="text-sm font-medium text-gray-700 pt-2">
                 Description {!selectedTagId && <span className="text-red-500">*</span>}
               </label>
-              <input
-                type="text"
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                minLength={3}
-                maxLength={40}
-                required={!selectedTagId}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
-                placeholder={selectedTagId ? "Enter description (optional)" : "Enter description (3-40 characters)"}
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                {description.length}/40 characters {selectedTagId && '(Optional when tag is selected)'}
-              </p>
+              <div>
+                <input
+                  type="text"
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  minLength={3}
+                  maxLength={40}
+                  required={!selectedTagId}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                  placeholder={selectedTagId ? "Enter description (optional)" : "Enter description (3-40 characters)"}
+                />
+                <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                  {description.length}/40 characters {selectedTagId && '(Optional when tag is selected)'}
+                </p>
+              </div>
             </div>
 
             {error && (
