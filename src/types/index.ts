@@ -35,7 +35,8 @@ export interface CreateExpenseRequest {
   month: number;
   categoryId: string;
   amount: number;
-  description: string;
+  description?: string;
+  tagId?: string;
 }
 
 export interface CreateExpenseResponse {
@@ -53,11 +54,17 @@ export type ExpenseCategory =
   | 'other';
 
 // User Settings types
+export interface Tag {
+  id: string;
+  name: string;
+}
+
 export interface ExpenseCategoryItem {
   id: string;
   category: string;
   description: string;
   monthlyUpperLimit: number;
+  tags: Tag[];
 }
 
 export interface UserSettingsResponse {
@@ -69,10 +76,12 @@ export interface CreateExpenseCategoryRequest {
   category: string;
   description: string;
   monthlyUpperLimit: number;
+  addTags?: string[];
 }
 
 export interface CreateExpenseCategoryResponse {
   id: string;
+  failedAddTags: string[];
 }
 
 // Expense Summary types

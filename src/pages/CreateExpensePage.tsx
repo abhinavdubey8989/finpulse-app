@@ -25,6 +25,7 @@ const CreateExpensePage = () => {
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState<string>('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategoryItem[]>([]);
@@ -81,8 +82,13 @@ const CreateExpensePage = () => {
 
     console.log('Form submitted');
 
-    // Validation
-    if (description.length < 3 || description.length > 40) {
+    // Validation: User must select a tag or enter description (or both)
+    if (!selectedTagId && (!description || description.trim().length === 0)) {
+      setError('Please select a tag or enter a description (or both)');
+      return;
+    }
+
+    if (description && (description.length < 3 || description.length > 40)) {
       setError('Description must be between 3 and 40 characters');
       return;
     }
@@ -103,7 +109,8 @@ const CreateExpensePage = () => {
       console.log('Creating expense with data:', {
         categoryId,
         amount: amountValue,
-        description,
+        description: description.trim() || undefined,
+        tagId: selectedTagId || undefined,
         month: currentMonth,
         year: currentYear,
       });
@@ -111,7 +118,8 @@ const CreateExpensePage = () => {
       await expenseService.createExpense({
         categoryId,
         amount: amountValue,
-        description,
+        description: description.trim() || undefined,
+        tagId: selectedTagId || undefined,
         month: currentMonth,
         year: currentYear,
       });
@@ -178,6 +186,7 @@ const CreateExpensePage = () => {
                 onChange={(e) => {
                   console.log('Category changed to:', e.target.value);
                   setCategoryId(e.target.value);
+                  setSelectedTagId(''); // Reset tag selection when category changes
                 }}
                 disabled={categoriesLoading || expenseCategories.length === 0}
                 required
@@ -219,9 +228,37 @@ const CreateExpensePage = () => {
               />
             </div>
 
+            {/* Tags Selection */}
+            {categoryId && expenseCategories.find(c => c.id === categoryId)?.tags && expenseCategories.find(c => c.id === categoryId)!.tags.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Tag (Optional)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {expenseCategories.find(c => c.id === categoryId)!.tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => setSelectedTagId(selectedTagId === tag.id ? '' : tag.id)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                        selectedTagId === tag.id
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      }`}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Click to select a tag. You can select only one tag per expense.
+                </p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Description {!selectedTagId && <span className="text-red-500">*</span>}
               </label>
               <input
                 type="text"
@@ -230,12 +267,12 @@ const CreateExpensePage = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 minLength={3}
                 maxLength={40}
-                required
+                required={!selectedTagId}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
-                placeholder="Enter description (3-40 characters)"
+                placeholder={selectedTagId ? "Enter description (optional)" : "Enter description (3-40 characters)"}
               />
               <p className="text-sm text-gray-500 mt-1">
-                {description.length}/40 characters
+                {description.length}/40 characters {selectedTagId && '(Optional when tag is selected)'}
               </p>
             </div>
 
