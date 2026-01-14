@@ -21,7 +21,7 @@ export interface Expense {
   id: number;
   userId?: number;
   year: number;
-  month: string;
+  month: number;
   category: string;
   amount: number;
   description: string;
@@ -32,8 +32,8 @@ export interface Expense {
 export interface CreateExpenseRequest {
   userId: string;
   year: number;
-  month: string;
-  category: string;
+  month: number;
+  categoryId: string;
   amount: number;
   description: string;
 }
@@ -51,3 +51,49 @@ export type ExpenseCategory =
   | 'entertainment' 
   | 'healthcare' 
   | 'other';
+
+// User Settings types
+export interface ExpenseCategoryItem {
+  id: string;
+  category: string;
+  description: string;
+  monthlyUpperLimit: number;
+}
+
+export interface UserSettingsResponse {
+  expenseCategories: ExpenseCategoryItem[];
+  userId: string;
+}
+
+export interface CreateExpenseCategoryRequest {
+  category: string;
+  description: string;
+  monthlyUpperLimit: number;
+}
+
+export interface CreateExpenseCategoryResponse {
+  id: string;
+}
+
+// Expense Summary types
+export interface ExpenseSummaryRequest {
+  year: number;
+  month: number;
+}
+
+export interface ExpenseSummaryElement {
+  category: string;
+  categoryDescription: string;
+  categoryId: string;
+  monthlyExpenseDone: number;
+  monthlyUpperLimit: number;
+}
+
+export interface ExpenseSummaryResponse {
+  elements: ExpenseSummaryElement[];
+  month: number;
+  numberOfExpenses: number;
+  totalExpenseAmount: number;
+  userId: string;
+  year: number;
+}

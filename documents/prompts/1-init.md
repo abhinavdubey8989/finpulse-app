@@ -23,8 +23,7 @@ curl --location 'http://localhost:8055/api/v1/auth/login' \
 {
     "data": {
         "accessToken": "jwt-token",
-        "userId": 123,
-        "personalExpenseSettings": []
+        "userId": 123
     },
     "respId": ""
 }
@@ -52,7 +51,7 @@ curl --location 'http://localhost:8055/api/v1/expense/personal' \
 --data '{
     "userId": 1,
     "year": 2026,
-    "month": "january",
+    "month": 1,
     "category": "travel",
     "amount": 100,
     "description": "test"
@@ -92,7 +91,7 @@ curl --location 'http://localhost:8055/api/v1/expense/personal/1' \
             "createdAt": "2026-01-08T15:19:55.716735Z",
             "description": "Goto some place",
             "id": 1,
-            "month": "january",
+            "month": 1,
             "updatedAt": "2026-01-08T15:19:55.71675Z",
             "year": 2026
         },
@@ -102,7 +101,7 @@ curl --location 'http://localhost:8055/api/v1/expense/personal/1' \
             "createdAt": "2026-01-08T15:20:04.178155Z",
             "description": "buy tshirt",
             "id": 2,
-            "month": "january",
+            "month": 2,
             "updatedAt": "2026-01-08T15:20:04.178184Z",
             "year": 2026
         }

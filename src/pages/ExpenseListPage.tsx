@@ -4,6 +4,22 @@ import { expenseService, authService } from '../services';
 import type { Expense } from '../types';
 import { authStorage } from '../utils/authStorage';
 
+// Map month number to month name
+const MONTH_NAMES: { [key: number]: string } = {
+  1: 'January',
+  2: 'February',
+  3: 'March',
+  4: 'April',
+  5: 'May',
+  6: 'June',
+  7: 'July',
+  8: 'August',
+  9: 'September',
+  10: 'October',
+  11: 'November',
+  12: 'December'
+};
+
 const ExpenseListPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,15 +94,33 @@ const ExpenseListPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800">My Expenses</h1>
               <p className="text-gray-600 mt-1">
-                Total: <span className="font-semibold text-purple-600">${totalExpenses.toFixed(2)}</span>
+                Total: <span className="font-semibold text-purple-600">₹{totalExpenses.toFixed(2)}</span>
               </p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/create-category')}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
+              >
+                + Add Category
+              </button>
               <button
                 onClick={() => navigate('/create-expense')}
                 className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
               >
                 + Add Expense
+              </button>
+              <button
+                onClick={() => navigate('/expenses')}
+                className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
+              >
+                View Past Expenses
+              </button>
+              <button
+                onClick={() => navigate('/summary')}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+              >
+                View Summary
               </button>
               <button
                 onClick={handleLogout}
@@ -132,14 +166,14 @@ const ExpenseListPage = () => {
                     {expense.category.replace('-', ' ')}
                   </span>
                   <span className="text-2xl font-bold text-purple-600">
-                    ${expense.amount.toFixed(2)}
+                    ₹{expense.amount.toFixed(2)}
                   </span>
                 </div>
 
                 <p className="text-gray-800 font-medium mb-2">{expense.description}</p>
 
                 <div className="flex justify-between items-center text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
-                  <span className="capitalize">{expense.month} {expense.year}</span>
+                  <span>{MONTH_NAMES[expense.month]} {expense.year}</span>
                   {expense.createdAt && (
                     <span>{formatDate(expense.createdAt)}</span>
                   )}

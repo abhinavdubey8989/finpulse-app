@@ -100,4 +100,38 @@ export const expenseService = {
     
     return response.data.apiData;
   },
+
+  getExpenseSummary: async (
+    userId: string,
+    summaryRequest: import('../types').ExpenseSummaryRequest
+  ) => {
+    const response = await apiClient.post<ApiResponse<import('../types').ExpenseSummaryResponse>>(
+      `/expense/personal/${userId}/summary`,
+      summaryRequest
+    );
+    
+    return response.data.apiData;
+  },
+};
+
+export const userSettingsService = {
+  getUserSettings: async (userId: string) => {
+    const response = await apiClient.get<ApiResponse<import('../types').UserSettingsResponse>>(
+      `/user/${userId}/settings`
+    );
+    
+    return response.data.apiData;
+  },
+
+  createExpenseCategory: async (
+    userId: string,
+    categoryData: import('../types').CreateExpenseCategoryRequest
+  ) => {
+    const response = await apiClient.post<ApiResponse<import('../types').CreateExpenseCategoryResponse>>(
+      `/user/${userId}/expense-category`,
+      categoryData
+    );
+    
+    return response.data.apiData;
+  },
 };
