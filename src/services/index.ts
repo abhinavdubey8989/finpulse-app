@@ -134,4 +134,17 @@ export const userSettingsService = {
     
     return response.data.apiData;
   },
+
+  updateExpenseCategory: async (
+    userId: string,
+    categoryId: string,
+    categoryData: import('../types').UpdateExpenseCategoryRequest
+  ) => {
+    const response = await apiClient.put<ApiResponse<import('../types').UpdateExpenseCategoryResponse>>(
+      `/user/${userId}/expense-category/${categoryId}`,
+      categoryData
+    );
+    
+    return response.data.apiData;
+  },
 };

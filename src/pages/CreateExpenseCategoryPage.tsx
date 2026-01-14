@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userSettingsService } from '../services';
 import { authStorage } from '../utils/authStorage';
+import type { ExpenseCategoryItem, UpdateExpenseCategoryRequest } from '../types';
 
 const CreateExpenseCategoryPage = () => {
   const [category, setCategory] = useState('');
@@ -13,6 +14,10 @@ const CreateExpenseCategoryPage = () => {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [existingCategories, setExistingCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<ExpenseCategoryItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -49,8 +54,30 @@ const CreateExpenseCategoryPage = () => {
     if (!token || !userId) {
       console.error('Not authenticated on CreateExpenseCategoryPage mount, redirecting to login');
       navigate('/', { replace: true });
+    } else {
+      // Fetch existing categories
+      fetchExistingCategories();
     }
   }, [navigate]);
+
+  const fetchExistingCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const userId = authStorage.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      const settingsData = await userSettingsService.getUserSettings(userId);
+      setExistingCategories(settingsData.expenseCategories || []);
+    } catch (err: any) {
+      console.error('Error fetching categories:', err);
+      setError(err.message || 'Failed to load categories');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -105,15 +132,34 @@ const CreateExpenseCategoryPage = () => {
         setToast(`Failed to add tags: ${failedTagsList}`);
         setTimeout(() => setToast(''), 5000);
       }
+
+      // Clear form
+      setCategory('');
+      setDescription('');
+      setMonthlyUpperLimit('');
+      setTags([]);
       
-      // Redirect to create expense page after a short delay if there are failed tags
-      setTimeout(() => navigate('/create-expense'), response.failedAddTags && response.failedAddTags.length > 0 ? 2000 : 0);
+      // Refresh categories list
+      fetchExistingCategories();
+      
+      setToast('Category created successfully!');
+      setTimeout(() => setToast(''), 3000);
     } catch (err: any) {
       console.error('Error creating expense category:', err);
       setError(err.message || err.response?.data?.message || 'Failed to create expense category. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleEditCategory = (categoryItem: ExpenseCategoryItem) => {
+    setEditingCategory(categoryItem);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingCategory(null);
   };
 
   return (
@@ -283,9 +329,362 @@ const CreateExpenseCategoryPage = () => {
             </div>
           </form>
         </div>
+
+        {/* Existing Categories */}
+        {existingCategories.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-8 mt-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Categories</h2>
+            {isLoadingCategories ? (
+              <div className="text-center text-gray-600">Loading categories...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {existingCategories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow relative"
+                  >
+                    {/* Three dots menu */}
+                    <button
+                      onClick={() => handleEditCategory(cat)}
+                      className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      aria-label="Edit category"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2 pr-8">{cat.category}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{cat.description}</p>
+                    <p className="text-sm font-medium text-purple-600 mb-3">
+                      Limit: ₹{cat.monthlyUpperLimit}
+                    </p>
+                    {cat.tags && cat.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {cat.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingCategory && (
+          <EditCategoryModal
+            category={editingCategory}
+            onClose={handleCloseEditModal}
+            onSuccess={() => {
+              fetchExistingCategories();
+              handleCloseEditModal();
+              setToast('Category updated successfully!');
+              setTimeout(() => setToast(''), 3000);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Edit Category Modal Component
+interface EditCategoryModalProps {
+  category: ExpenseCategoryItem;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditCategoryModal = ({ category, onClose, onSuccess }: EditCategoryModalProps) => {
+  const [categoryName, setCategoryName] = useState(category.category);
+  const [description, setDescription] = useState(category.description);
+  const [monthlyUpperLimit, setMonthlyUpperLimit] = useState(String(category.monthlyUpperLimit));
+  const [newTags, setNewTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [existingTags, setExistingTags] = useState(category.tags.map(t => ({ ...t, isEditing: false, newName: t.name })));
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleNewTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const trimmedTag = newTagInput.trim();
+      if (trimmedTag.length >= 3 && !newTags.includes(trimmedTag)) {
+        setNewTags([...newTags, trimmedTag]);
+        setNewTagInput('');
+      } else if (trimmedTag.length < 3) {
+        setError('Tag must be at least 3 characters');
+        setTimeout(() => setError(''), 3000);
+      }
+    }
+  };
+
+  const removeNewTag = (tagToRemove: string) => {
+    setNewTags(newTags.filter(tag => tag !== tagToRemove));
+  };
+
+  const toggleEditTag = (tagId: string) => {
+    setExistingTags(existingTags.map(tag =>
+      tag.id === tagId ? { ...tag, isEditing: !tag.isEditing } : tag
+    ));
+  };
+
+  const updateTagName = (tagId: string, newName: string) => {
+    setExistingTags(existingTags.map(tag =>
+      tag.id === tagId ? { ...tag, newName } : tag
+    ));
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (categoryName.length < 4) {
+      setError('Category must be at least 4 characters');
+      return;
+    }
+
+    if (description.length < 4) {
+      setError('Description must be at least 4 characters');
+      return;
+    }
+
+    const limitValue = parseInt(monthlyUpperLimit, 10);
+    if (isNaN(limitValue) || limitValue <= 0 || !Number.isInteger(limitValue)) {
+      setError('Monthly upper limit must be a positive integer');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const userId = authStorage.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Build update tags array - only include tags that were actually edited
+      const updateTags = existingTags
+        .filter(tag => tag.newName !== tag.name && tag.newName.trim().length >= 3)
+        .map(tag => ({
+          id: tag.id,
+          newName: tag.newName,
+        }));
+
+      const updateData: UpdateExpenseCategoryRequest = {
+        categoryName,
+        description,
+        monthlyUpperLimit: limitValue,
+        ...(newTags.length > 0 && { addTags: newTags }),
+        ...(updateTags.length > 0 && { updateTags }),
+      };
+
+      const response = await userSettingsService.updateExpenseCategory(
+        userId,
+        category.id,
+        updateData
+      );
+
+      if (response.failedAddTags && response.failedAddTags.length > 0) {
+        setError(`Failed to add tags: ${response.failedAddTags.join(', ')}`);
+        setTimeout(() => setError(''), 5000);
+      }
+
+      if (response.failedUpdateTags && response.failedUpdateTags.length > 0) {
+        setError(`Failed to update tags: ${response.failedUpdateTags.join(', ')}`);
+        setTimeout(() => setError(''), 5000);
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error('Error updating expense category:', err);
+      setError(err.message || err.response?.data?.message || 'Failed to update expense category. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Edit Category</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label="Close modal"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700 mb-2">
+                Category Name
+              </label>
+              <input
+                type="text"
+                id="edit-category"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                minLength={4}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <input
+                type="text"
+                id="edit-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                minLength={4}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="edit-limit" className="block text-sm font-medium text-gray-700 mb-2">
+                Monthly Upper Limit (₹)
+              </label>
+              <input
+                type="number"
+                id="edit-limit"
+                value={monthlyUpperLimit}
+                onChange={(e) => setMonthlyUpperLimit(e.target.value)}
+                step="1"
+                min="1"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+              />
+            </div>
+
+            {/* Existing Tags */}
+            {existingTags.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Existing Tags (click to edit)
+                </label>
+                <div className="space-y-2">
+                  {existingTags.map((tag) => (
+                    <div key={tag.id} className="flex items-center gap-2">
+                      {tag.isEditing ? (
+                        <>
+                          <input
+                            type="text"
+                            value={tag.newName}
+                            onChange={(e) => updateTagName(tag.id, e.target.value)}
+                            className="flex-1 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleEditTag(tag.id)}
+                            className="text-green-600 hover:text-green-700 text-sm font-medium"
+                          >
+                            Done
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                            {tag.newName}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleEditTag(tag.id)}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          >
+                            Edit
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* New Tags */}
+            <div>
+              <label htmlFor="edit-new-tags" className="block text-sm font-medium text-gray-700 mb-2">
+                Add New Tags
+              </label>
+              <div className="w-full px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent bg-white min-h-[42px] flex flex-wrap gap-2 items-center">
+                {newTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeNewTag(tag)}
+                      className="hover:text-purple-900 focus:outline-none"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  id="edit-new-tags"
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={handleNewTagInputKeyDown}
+                  className="flex-1 min-w-[120px] outline-none text-gray-900 bg-transparent"
+                  placeholder="Enter tag and press Enter"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Updating...' : 'Update Category'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
 
 export default CreateExpenseCategoryPage;
+

@@ -90,6 +90,23 @@ export interface CreateExpenseCategoryResponse {
   failedAddTags: string[];
 }
 
+export interface UpdateExpenseCategoryRequest {
+  categoryName: string;
+  description: string;
+  monthlyUpperLimit: number;
+  addTags?: string[];
+  updateTags?: {
+    id: string;
+    newName: string;
+  }[];
+}
+
+export interface UpdateExpenseCategoryResponse {
+  id: string;
+  failedAddTags: string[];
+  failedUpdateTags: string[];
+}
+
 // Expense Summary types
 export interface ExpenseSummaryRequest {
   year: number;
