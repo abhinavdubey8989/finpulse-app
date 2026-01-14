@@ -362,8 +362,8 @@ const CreateExpenseCategoryPage = () => {
                       </svg>
                     </button>
 
-                    <h3 className="text-base font-semibold text-gray-800 mb-1 pr-6">{cat.category}</h3>
-                    <p className="text-xs text-gray-600 mb-1">{cat.description}</p>
+                    <h3 className="text-base font-semibold text-gray-800 mb-1 pr-6 capitalize">{cat.category}</h3>
+                    <p className="text-xs text-gray-600 mb-1 capitalize">{cat.description}</p>
                     <p className="text-xs font-medium text-purple-600 mb-2">
                       Limit: ₹{cat.monthlyUpperLimit}
                     </p>

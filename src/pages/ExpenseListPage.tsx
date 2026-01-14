@@ -185,7 +185,7 @@ const ExpenseListPage = () => {
               >
                 <div className="flex justify-between items-start mb-2">
                   {expense.categoryName && (
-                    <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-md">
+                    <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-md capitalize">
                       {expense.categoryName}
                     </span>
                   )}

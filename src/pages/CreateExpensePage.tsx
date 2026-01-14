@@ -99,6 +99,9 @@ const CreateExpensePage = () => {
       return;
     }
 
+    // Round up to next integer
+    const roundedAmount = Math.ceil(amountValue);
+
     setIsLoading(true);
 
     try {
@@ -108,7 +111,7 @@ const CreateExpensePage = () => {
 
       console.log('Creating expense with data:', {
         categoryId,
-        amount: amountValue,
+        amount: roundedAmount,
         description: description.trim() || undefined,
         tagId: selectedTagId || undefined,
         month: currentMonth,
@@ -117,7 +120,7 @@ const CreateExpensePage = () => {
 
       await expenseService.createExpense({
         categoryId,
-        amount: amountValue,
+        amount: roundedAmount,
         description: description.trim() || undefined,
         tagId: selectedTagId || undefined,
         month: currentMonth,
@@ -191,7 +194,7 @@ const CreateExpensePage = () => {
                   }}
                   disabled={categoriesLoading || expenseCategories.length === 0}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
                 >
                   {categoriesLoading ? (
                     <option value="">Loading categories...</option>
@@ -206,7 +209,7 @@ const CreateExpensePage = () => {
                   )}
                 </select>
                 {!categoriesLoading && expenseCategories.length > 0 && categoryId && (
-                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1 capitalize">
                     {expenseCategories.find(c => c.id === categoryId)?.description}
                   </p>
                 )}
