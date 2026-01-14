@@ -93,12 +93,6 @@ const ExpenseSummaryPage = () => {
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Expense Summary</h1>
-              {summaryData && (
-                <p className="text-gray-600 mt-1">
-                  Total: <span className="font-semibold text-purple-600">₹{summaryData.totalExpenseAmount.toFixed(2)}</span>
-                  {' '}({summaryData.numberOfExpenses} expense{summaryData.numberOfExpenses !== 1 ? 's' : ''})
-                </p>
-              )}
             </div>
             <div className="flex gap-3">
               <button
@@ -208,10 +202,10 @@ const ExpenseSummaryPage = () => {
                   backgroundColor: (() => {
                     const totalLimit = summaryData.elements.reduce((sum, el) => sum + el.monthlyUpperLimit, 0);
                     const percentage = (summaryData.totalExpenseAmount / totalLimit) * 100;
-                    if (percentage <= 50) return '#84c38eff';
-                    if (percentage <= 90) return '#b3b36f';
-                    if (percentage < 100) return '#c77350';
-                    return '#9c5962';
+                    if (percentage >= 100) return '#9c5962';
+                    if (percentage >= 91) return '#c77350';
+                    if (percentage >= 51) return '#b3b36f';
+                    return '#84c38eff';
                   })()
                 }}
               />
@@ -290,11 +284,27 @@ const ExpenseSummaryPage = () => {
                       style={{ backgroundColor: cardColor }}
                     >
                       <div className="flex justify-between items-start mb-3">
-                        <div>
+                        <div className="flex items-center gap-2">
                           <h3 className="text-base font-semibold text-white capitalize">
                             {element.category}
                           </h3>
-                          <p className="text-xs text-white/90 mt-0.5">{element.categoryDescription}</p>
+                          <div className="relative group">
+                            <svg 
+                              className="w-4 h-4 text-white/80 cursor-help" 
+                              fill="currentColor" 
+                              viewBox="0 0 20 20"
+                            >
+                              <path 
+                                fillRule="evenodd" 
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                                clipRule="evenodd" 
+                              />
+                            </svg>
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                              {element.categoryDescription}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
