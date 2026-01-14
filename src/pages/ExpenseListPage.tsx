@@ -61,20 +61,6 @@ const ExpenseListPage = () => {
     });
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      rent: 'bg-blue-100 text-blue-800',
-      shopping: 'bg-pink-100 text-pink-800',
-      'eat-out': 'bg-orange-100 text-orange-800',
-      travel: 'bg-green-100 text-green-800',
-      utilities: 'bg-yellow-100 text-yellow-800',
-      entertainment: 'bg-purple-100 text-purple-800',
-      healthcare: 'bg-red-100 text-red-800',
-      other: 'bg-gray-100 text-gray-800',
-    };
-    return colors[category] || colors.other;
-  };
-
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   if (isLoading) {
@@ -94,7 +80,7 @@ const ExpenseListPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800">My Expenses</h1>
               <p className="text-gray-600 mt-1">
-                Total: <span className="font-semibold text-purple-600">₹{totalExpenses.toFixed(2)}</span>
+                Total: <span className="font-semibold text-purple-600">₹{totalExpenses}</span>
               </p>
             </div>
             <div className="flex gap-3">
@@ -151,29 +137,36 @@ const ExpenseListPage = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {expenses.map((expense) => (
               <div
                 key={expense.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getCategoryColor(
-                      expense.category
-                    )}`}
-                  >
-                    {expense.category.replace('-', ' ')}
-                  </span>
-                  <span className="text-2xl font-bold text-purple-600">
-                    ₹{expense.amount.toFixed(2)}
+                <div className="flex justify-between items-start mb-2">
+                  {expense.categoryName && (
+                    <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-md">
+                      {expense.categoryName}
+                    </span>
+                  )}
+                  <span className="text-xl font-bold text-purple-600">
+                    ₹{expense.amount}
                   </span>
                 </div>
 
-                <p className="text-gray-800 font-medium mb-2">{expense.description}</p>
+                {/* Tags and Description */}
+                <div className="mb-2">
+                  {expense.tag && (
+                    <span className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {expense.tag.name}
+                    </span>
+                  )}
+                  {expense.description && (
+                    <p className="text-gray-800 text-sm mt-1">{expense.description}</p>
+                  )}
+                </div>
 
-                <div className="flex justify-between items-center text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
-                  <span>{MONTH_NAMES[expense.month]} {expense.year}</span>
+                <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
                   {expense.createdAt && (
                     <span>{formatDate(expense.createdAt)}</span>
                   )}

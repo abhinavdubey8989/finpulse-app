@@ -23,8 +23,14 @@ export interface Expense {
   year: number;
   month: number;
   category: string;
+  categoryId?: string;
+  categoryName?: string;
   amount: number;
-  description: string;
+  description?: string;
+  tag?: {
+    id: string;
+    name: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
