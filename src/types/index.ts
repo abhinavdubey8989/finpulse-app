@@ -49,6 +49,17 @@ export interface CreateExpenseResponse {
   id: number;
 }
 
+export interface UpdateExpenseRequest {
+  categoryId: string;
+  amount: number;
+  description?: string;
+  tagId?: string;
+}
+
+export interface UpdateExpenseResponse {
+  id: string;
+}
+
 export type ExpenseCategory = 
   | 'rent' 
   | 'shopping' 

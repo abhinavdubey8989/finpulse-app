@@ -29,7 +29,7 @@
 
 ```
 curl --location 'http://localhost:8055/api/v1/expense/personal/550e8400-e29b-41d4-a716-446655440000/summary' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiQWJoaW5hdiIsInVzZXJJZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsImVtYWlsIjoiYWJoaW5hdkBleGFtcGxlLmNvbSIsImlhdCI6MTc2ODM3MjM5MSwiZXhwIjoxNzY4NDU4NzkxfQ.gBK8lkn77bwAisAemtnz-a-yq8sM8Av9F1w3eAYCYWA' \
+--header 'Authorization: Bearer access-token' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: JSESSIONID=56492B90A7B4FBE670EEF4AF1355EBEF' \
 --data '{

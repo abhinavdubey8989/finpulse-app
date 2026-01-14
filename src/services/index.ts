@@ -101,6 +101,18 @@ export const expenseService = {
     return response.data.apiData;
   },
 
+  updateExpense: async (
+    expenseId: string,
+    expenseData: import('../types').UpdateExpenseRequest
+  ) => {
+    const response = await apiClient.put<ApiResponse<import('../types').UpdateExpenseResponse>>(
+      `/expense/personal/${expenseId}`,
+      expenseData
+    );
+    
+    return response.data.apiData;
+  },
+
   getExpenseSummary: async (
     userId: string,
     summaryRequest: import('../types').ExpenseSummaryRequest

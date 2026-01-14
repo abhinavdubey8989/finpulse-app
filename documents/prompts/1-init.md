@@ -77,7 +77,7 @@ curl --location 'http://localhost:8055/api/v1/expense/personal' \
 
 ```
 curl --location 'http://localhost:8055/api/v1/expense/personal/1' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoidGVzZXIgdXNlciIsInVzZXJJZCI6MSwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzY3ODg0NDUyLCJleHAiOjE3Njc5NzA4NTJ9.SraT-ZiGO1QobzQqPltexUZl5xGi-vd2zVHPBZrsWwM' \
+--header 'Authorization: Bearer access-token' \
 --header 'Cookie: JSESSIONID=5CEE760B6E46DBBC05E2D559DA8C81EC' \
 --data ''
 ```

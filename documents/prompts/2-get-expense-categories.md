@@ -7,7 +7,7 @@
 
 ```
 curl --location 'http://localhost:8055/api/v1/user/550e8400-e29b-41d4-a716-446655440000/settings' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJlbWFpbCI6ImFiaGluYXZAZXhhbXBsZS5jb20iLCJuYW1lIjoiQWJoaW5hdiIsImlhdCI6MTc2ODI4MDcwMCwiZXhwIjoxNzY4MzY3MTAwfQ.64mQVtZ5LbmzdW26UrJ6jtQEkpIAIsgNQRe4qqzg4nc' \
+--header 'Authorization: Bearer access-token' \
 --header 'Cookie: JSESSIONID=2CA5285CAF75BB4F3CBCA423AABEB062' \
 --data ''
 ```

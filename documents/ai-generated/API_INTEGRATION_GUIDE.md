@@ -151,7 +151,7 @@ apiClient.interceptors.request.use(
 ### Original CURL
 ```bash
 curl --location 'http://localhost:8055/api/v1/expense/personal/1' \
---header 'Authorization: Bearer eyJhbGci...' \
+--header 'Authorization: Bearer access-token' \
 --data ''
 ```
 

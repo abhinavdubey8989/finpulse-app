@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { expenseService, authService } from '../services';
-import type { Expense } from '../types';
+import { expenseService, authService, userSettingsService } from '../services';
+import type { Expense, ExpenseCategoryItem, UpdateExpenseRequest } from '../types';
 import { authStorage } from '../utils/authStorage';
 
 // Map month number to month name
@@ -25,6 +25,8 @@ const ExpenseListPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,6 +83,16 @@ const ExpenseListPage = () => {
       default:
         return sorted;
     }
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingExpense(null);
   };
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -181,9 +193,20 @@ const ExpenseListPage = () => {
             {sortedExpenses.map((expense) => (
               <div
                 key={expense.id}
-                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow"
+                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow relative"
               >
-                <div className="flex justify-between items-start mb-2">
+                {/* Three dots menu */}
+                <button
+                  onClick={() => handleEditExpense(expense)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  aria-label="Edit expense"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  </svg>
+                </button>
+
+                <div className="flex justify-between items-start mb-2 pr-6">
                   {expense.categoryName && (
                     <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-md capitalize">
                       {expense.categoryName}
@@ -215,6 +238,253 @@ const ExpenseListPage = () => {
             ))}
           </div>
         )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingExpense && (
+          <EditExpenseModal
+            expense={editingExpense}
+            onClose={handleCloseEditModal}
+            onSuccess={() => {
+              fetchExpenses();
+              handleCloseEditModal();
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Edit Expense Modal Component
+interface EditExpenseModalProps {
+  expense: Expense;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const EditExpenseModal = ({ expense, onClose, onSuccess }: EditExpenseModalProps) => {
+  const [categoryId, setCategoryId] = useState(expense.categoryId || '');
+  const [amount, setAmount] = useState(String(expense.amount));
+  const [description, setDescription] = useState(expense.description || '');
+  const [selectedTagId, setSelectedTagId] = useState(expense.tag?.id || '');
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const userId = authStorage.getUserId();
+        if (!userId) {
+          throw new Error('User not authenticated');
+        }
+
+        const settings = await userSettingsService.getUserSettings(userId);
+        setExpenseCategories(settings.expenseCategories);
+      } catch (err: any) {
+        console.error('Error fetching expense categories:', err);
+        setError('Failed to load expense categories.');
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!selectedTagId && (!description || description.trim().length === 0)) {
+      setError('Please select a tag or enter a description (or both)');
+      return;
+    }
+
+    if (description && (description.length < 3 || description.length > 40)) {
+      setError('Description must be between 3 and 40 characters');
+      return;
+    }
+
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      setError('Please enter a valid amount');
+      return;
+    }
+
+    // Round up to next integer
+    const roundedAmount = Math.ceil(amountValue);
+
+    setIsLoading(true);
+
+    try {
+      const updateData: UpdateExpenseRequest = {
+        categoryId,
+        amount: roundedAmount,
+        description: description.trim() || undefined,
+        tagId: selectedTagId || undefined,
+      };
+
+      await expenseService.updateExpense(String(expense.id), updateData);
+      onSuccess();
+    } catch (err: any) {
+      console.error('Error updating expense:', err);
+      setError(err.message || err.response?.data?.message || 'Failed to update expense. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Edit Expense</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              aria-label="Close modal"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="edit-category" className="text-sm font-medium text-gray-700 pt-2">
+                Expense Category
+              </label>
+              <div>
+                <select
+                  id="edit-category"
+                  value={categoryId}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value);
+                    setSelectedTagId(''); // Reset tag selection when category changes
+                  }}
+                  disabled={categoriesLoading || expenseCategories.length === 0}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
+                >
+                  {categoriesLoading ? (
+                    <option value="">Loading categories...</option>
+                  ) : expenseCategories.length === 0 ? (
+                    <option value="">No categories available</option>
+                  ) : (
+                    expenseCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.category}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {!categoriesLoading && expenseCategories.length > 0 && categoryId && (
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1 capitalize">
+                    {expenseCategories.find(c => c.id === categoryId)?.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="edit-amount" className="text-sm font-medium text-gray-700 pt-2">
+                Amount (₹)
+              </label>
+              <input
+                type="number"
+                id="edit-amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                step="0.01"
+                min="0.01"
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                placeholder="Enter amount"
+              />
+            </div>
+
+            {/* Tags Selection */}
+            {categoryId && expenseCategories.find(c => c.id === categoryId)?.tags && expenseCategories.find(c => c.id === categoryId)!.tags.length > 0 && (
+              <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                <label className="text-sm font-medium text-gray-700 pt-2">
+                  Select Tag (Optional)
+                </label>
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    {expenseCategories.find(c => c.id === categoryId)!.tags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => setSelectedTagId(selectedTagId === tag.id ? '' : tag.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                          selectedTagId === tag.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    Click to select a tag. You can select only one tag per expense.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="edit-description" className="text-sm font-medium text-gray-700 pt-2">
+                Description {!selectedTagId && <span className="text-red-500">*</span>}
+              </label>
+              <div>
+                <input
+                  type="text"
+                  id="edit-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  minLength={3}
+                  maxLength={40}
+                  required={!selectedTagId}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                  placeholder={selectedTagId ? "Enter description (optional)" : "Enter description (3-40 characters)"}
+                />
+                <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                  {description.length}/40 characters {selectedTagId && '(Optional when tag is selected)'}
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Updating...' : 'Update Expense'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
