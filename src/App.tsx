@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import CreateExpensePage from './pages/CreateExpensePage';
+import CreateExpenseCategoryPage from './pages/CreateExpenseCategoryPage';
 import ExpenseListPage from './pages/ExpenseListPage';
+import ExpenseSummaryPage from './pages/ExpenseSummaryPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -23,6 +25,22 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateExpensePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-category"
+          element={
+            <ProtectedRoute>
+              <CreateExpenseCategoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/summary"
+          element={
+            <ProtectedRoute>
+              <ExpenseSummaryPage />
             </ProtectedRoute>
           }
         />
