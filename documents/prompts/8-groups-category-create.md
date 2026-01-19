@@ -1,6 +1,6 @@
 
 
-- Edit the add expense category-page
+- Edit the add expense page
 - Above `Category Name` form element, add another drop down, named select group
 - The options are to be fetched from the response of below API `/group/configure/`
 - In the list of options, these should be an additional option , which does not come from the API & it is called `Personal expense`

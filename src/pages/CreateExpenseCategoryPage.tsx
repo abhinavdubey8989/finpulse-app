@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userSettingsService } from '../services';
+import { userSettingsService, groupService } from '../services';
 import { authStorage } from '../utils/authStorage';
-import type { ExpenseCategoryItem, UpdateExpenseCategoryRequest } from '../types';
+import type { ExpenseCategoryItem, UpdateExpenseCategoryRequest, GroupAndCategory } from '../types';
 
 const CreateExpenseCategoryPage = () => {
+  const [selectedGroup, setSelectedGroup] = useState<string>('personal');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [monthlyUpperLimit, setMonthlyUpperLimit] = useState('');
@@ -15,6 +16,7 @@ const CreateExpenseCategoryPage = () => {
   const [toast, setToast] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [existingCategories, setExistingCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [groupList, setGroupList] = useState<GroupAndCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategoryItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -55,10 +57,37 @@ const CreateExpenseCategoryPage = () => {
       console.error('Not authenticated on CreateExpenseCategoryPage mount, redirecting to login');
       navigate('/', { replace: true });
     } else {
-      // Fetch existing categories
-      fetchExistingCategories();
+      // Fetch existing categories and groups
+      fetchData();
     }
   }, [navigate]);
+
+  const fetchData = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const userId = authStorage.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Fetch personal categories
+      const settingsData = await userSettingsService.getUserSettings(userId);
+      console.log('Personal categories fetched:', settingsData.expenseCategories);
+      setExistingCategories(settingsData.expenseCategories || []);
+
+      // Fetch groups
+      const configData = await groupService.getGroupConfiguration(userId);
+      console.log('Group configuration fetched:', configData);
+      console.log('Group list:', configData.groupAndCategoryList);
+      setGroupList(configData.groupAndCategoryList);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Failed to load data');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
 
   const fetchExistingCategories = async () => {
     setIsLoadingCategories(true);
@@ -77,6 +106,19 @@ const CreateExpenseCategoryPage = () => {
     } finally {
       setIsLoadingCategories(false);
     }
+  };
+
+  // Get categories based on selected group
+  const getDisplayCategories = (): ExpenseCategoryItem[] => {
+    if (selectedGroup === 'personal') {
+      console.log('Displaying personal categories:', existingCategories);
+      return existingCategories;
+    }
+    const group = groupList.find(g => g.groupId === selectedGroup);
+    console.log('Selected group:', selectedGroup);
+    console.log('Found group:', group);
+    console.log('Group categories:', group?.expenseCategories);
+    return group ? group.expenseCategories : [];
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -110,19 +152,41 @@ const CreateExpenseCategoryPage = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Creating expense category with data:', {
-        category,
-        description,
-        monthlyUpperLimit: limitValue,
-        addTags: tags.length > 0 ? tags : undefined,
-      });
+      let response;
 
-      const response = await userSettingsService.createExpenseCategory(userId, {
-        category,
-        description,
-        monthlyUpperLimit: limitValue,
-        ...(tags.length > 0 && { addTags: tags }),
-      });
+      if (selectedGroup === 'personal') {
+        // Create personal expense category
+        console.log('Creating personal expense category with data:', {
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          addTags: tags.length > 0 ? tags : undefined,
+        });
+
+        response = await userSettingsService.createExpenseCategory(userId, {
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          ...(tags.length > 0 && { addTags: tags }),
+        });
+      } else {
+        // Create group expense category
+        console.log('Creating group expense category with data:', {
+          userId,
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          addTags: tags.length > 0 ? tags : undefined,
+        });
+
+        response = await groupService.createGroupExpenseCategory(selectedGroup, {
+          userId,
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          ...(tags.length > 0 && { addTags: tags }),
+        });
+      }
 
       console.log('Expense category created successfully');
       
@@ -139,8 +203,8 @@ const CreateExpenseCategoryPage = () => {
       setMonthlyUpperLimit('');
       setTags([]);
       
-      // Refresh categories list
-      fetchExistingCategories();
+      // Refresh data
+      fetchData();
       
       setToast('Category created successfully!');
       setTimeout(() => setToast(''), 3000);
@@ -210,6 +274,34 @@ const CreateExpenseCategoryPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="group" className="text-sm font-medium text-gray-700 pt-2">
+                Select Group
+              </label>
+              <div>
+                <select
+                  id="group"
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                  disabled={isLoadingCategories}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
+                >
+                  <option value="personal">Personal expense</option>
+                  {groupList.map((group) => (
+                    <option key={group.groupId} value={group.groupId}>
+                      {group.groupName}
+                    </option>
+                  ))}
+                </select>
+                {selectedGroup !== 'personal' && (
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    {groupList.find(g => g.groupId === selectedGroup)?.groupDescription}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
               <label htmlFor="category" className="text-sm font-medium text-gray-700 pt-2">
                 Category Name
               </label>
@@ -229,7 +321,6 @@ const CreateExpenseCategoryPage = () => {
                 </p> */}
               </div>
             </div>
-
             <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
               <label htmlFor="description" className="text-sm font-medium text-gray-700 pt-2">
                 Description
@@ -345,14 +436,21 @@ const CreateExpenseCategoryPage = () => {
         </div>
 
         {/* Existing Categories */}
-        {existingCategories.length > 0 && (
+        {getDisplayCategories().length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-8 mt-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Categories</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              Existing Categories
+              {selectedGroup !== 'personal' && (
+                <span className="text-lg font-normal text-gray-600 ml-2">
+                  ({groupList.find(g => g.groupId === selectedGroup)?.groupName})
+                </span>
+              )}
+            </h2>
             {isLoadingCategories ? (
               <div className="text-center text-gray-600">Loading categories...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {existingCategories.map((cat) => (
+                {getDisplayCategories().map((cat) => (
                   <div
                     key={cat.id}
                     className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow relative"

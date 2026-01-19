@@ -187,5 +187,14 @@ export const groupService = {
     
     return response.data.apiData;
   },
+
+  createGroupExpenseCategory: async (groupId: string, categoryData: import('../types').CreateGroupExpenseCategoryRequest) => {
+    const response = await apiClient.post<ApiResponse<import('../types').CreateGroupExpenseCategoryResponse>>(
+      `/group/${groupId}/expense-category`,
+      categoryData
+    );
+    
+    return response.data.apiData;
+  },
 };
 

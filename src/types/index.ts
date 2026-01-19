@@ -203,3 +203,16 @@ export interface CreateGroupExpenseRequest {
 export interface CreateGroupExpenseResponse {
   id: string;
 }
+
+export interface CreateGroupExpenseCategoryRequest {
+  userId: string;
+  categoryName: string;
+  description: string;
+  monthlyUpperLimit: number;
+  addTags?: string[];
+}
+
+export interface CreateGroupExpenseCategoryResponse {
+  id: string;
+  failedAddTags: string[];
+}
