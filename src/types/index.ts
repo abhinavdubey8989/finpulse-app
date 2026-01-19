@@ -147,3 +147,43 @@ export interface ExpenseSummaryResponse {
   userId: string;
   year: number;
 }
+
+// Group types
+export interface User {
+  userId: string;
+  name: string;
+  emailId: string;
+}
+
+export interface GroupExpenseCategory {
+  id: string;
+  category: string;
+  description: string;
+  monthlyUpperLimit: number;
+  tags: Tag[];
+}
+
+export interface GroupAndCategory {
+  groupId: string;
+  groupName: string;
+  groupDescription: string;
+  members: User[];
+  expenseCategories: GroupExpenseCategory[];
+}
+
+export interface ConfigureGroupResponse {
+  allUsers: User[];
+  groupAndCategoryList: GroupAndCategory[];
+}
+
+export interface CreateGroupRequest {
+  createdBy: string;
+  name: string;
+  description: string;
+  memberUserIds: string[];
+}
+
+export interface CreateGroupResponse {
+  id: string;
+  failedMemberIds: string[];
+}

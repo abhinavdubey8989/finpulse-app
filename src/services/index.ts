@@ -160,3 +160,23 @@ export const userSettingsService = {
     return response.data.apiData;
   },
 };
+
+export const groupService = {
+  getGroupConfiguration: async (userId: string) => {
+    const response = await apiClient.get<ApiResponse<import('../types').ConfigureGroupResponse>>(
+      `/group/configure/${userId}`
+    );
+    
+    return response.data.apiData;
+  },
+
+  createGroup: async (groupData: import('../types').CreateGroupRequest) => {
+    const response = await apiClient.post<ApiResponse<import('../types').CreateGroupResponse>>(
+      '/group',
+      groupData
+    );
+    
+    return response.data.apiData;
+  },
+};
+
