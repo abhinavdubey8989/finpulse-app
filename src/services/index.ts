@@ -178,5 +178,14 @@ export const groupService = {
     
     return response.data.apiData;
   },
+
+  createGroupExpense: async (groupId: string, expenseData: import('../types').CreateGroupExpenseRequest) => {
+    const response = await apiClient.post<ApiResponse<import('../types').CreateGroupExpenseResponse>>(
+      `/group/${groupId}/expense`,
+      expenseData
+    );
+    
+    return response.data.apiData;
+  },
 };
 

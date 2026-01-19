@@ -2,19 +2,19 @@
 
 - Edit the add expense category-page
 - Above `Category Name` form element, add another drop down, named select group
-- The options are to be fetched from the response of below API
+- The options are to be fetched from the response of below API `/group/configure/`
 - In the list of options, these should be an additional option , which does not come from the API & it is called `Personal expense`
 
-- When user selects `Personal expense`, the current flow continues
-- But when user select an option from below group option, we need to call API to add group expense
+- When user selects `Personal expense`, the current flow continues (ie continue calling `/api/v1/expense/personal`
+)
+- But when user select an option from below group option, we need to call API to add group expense ie `/group/<group-id>/expense`
 
 
 [Details for form filling in case of group expense]
 - When user selects an option from below group option, we need to show a sub form of 2 elements
 - 1st element to select `splitType` : Exact/Percent
-- 2nd element to enter the split of the expense
-- the form should contain each members user-name & text box to enter a number
-- This will be passed as `splits`
+- 2nd element to enter the split of the expense, this section should contain each members user-name & text box to enter a number (if `splitType` is `Exact`, it represents amount. If `percent`, it represents % of the amount)
+- The entered value will will be passed as `splits` in the request
 - The API request & response is mentioned below
 
 

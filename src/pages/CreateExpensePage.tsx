@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { expenseService, userSettingsService } from '../services';
+import { expenseService, userSettingsService, groupService } from '../services';
 import { authStorage } from '../utils/authStorage';
-import type { ExpenseCategory, ExpenseCategoryItem } from '../types';
+import type { ExpenseCategory, ExpenseCategoryItem, GroupAndCategory, User } from '../types';
 
 // Map month number to month name
 const MONTH_NAMES: { [key: number]: string } = {
@@ -22,13 +22,17 @@ const MONTH_NAMES: { [key: number]: string } = {
 };
 
 const CreateExpensePage = () => {
+  const [selectedGroup, setSelectedGroup] = useState<string>('personal');
   const [categoryId, setCategoryId] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [selectedTagId, setSelectedTagId] = useState<string>('');
+  const [splitType, setSplitType] = useState<'EXACT' | 'PERCENT'>('EXACT');
+  const [splits, setSplits] = useState<{ [userId: string]: string }>({});
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [groupList, setGroupList] = useState<GroupAndCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -51,13 +55,21 @@ const CreateExpensePage = () => {
       return;
     }
 
-    // Fetch expense categories
-    const fetchCategories = async () => {
+    // Fetch group configuration and expense categories
+    const fetchData = async () => {
       try {
         setCategoriesLoading(true);
-        console.log('Fetching expense categories for userId:', userId);
+        console.log('Fetching data for userId:', userId);
+        
+        // Fetch group configuration (includes groups and personal categories)
+        const configData = await groupService.getGroupConfiguration(userId);
+        console.log('Received group configuration:', configData);
+        
+        setGroupList(configData.groupAndCategoryList);
+        
+        // Fetch personal expense categories
         const settings = await userSettingsService.getUserSettings(userId);
-        console.log('Received expense categories:', settings.expenseCategories);
+        console.log('Received personal expense categories:', settings.expenseCategories);
         
         setExpenseCategories(settings.expenseCategories);
         
@@ -66,15 +78,68 @@ const CreateExpensePage = () => {
           setCategoryId(settings.expenseCategories[0].id);
         }
       } catch (err: any) {
-        console.error('Error fetching expense categories:', err);
-        setError('Failed to load expense categories. Please try again.');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data. Please try again.');
       } finally {
         setCategoriesLoading(false);
       }
     };
 
-    fetchCategories();
+    fetchData();
   }, [navigate]);
+
+  // Get current group and its members
+  const getCurrentGroup = (): GroupAndCategory | null => {
+    if (selectedGroup === 'personal') return null;
+    return groupList.find(g => g.groupId === selectedGroup) || null;
+  };
+
+  // Get available categories based on selected group
+  const getAvailableCategories = (): ExpenseCategoryItem[] => {
+    if (selectedGroup === 'personal') {
+      return expenseCategories;
+    }
+    const group = getCurrentGroup();
+    return group ? group.expenseCategories : [];
+  };
+
+  // Handle group selection change
+  const handleGroupChange = (groupId: string) => {
+    setSelectedGroup(groupId);
+    setCategoryId('');
+    setSelectedTagId('');
+    setSplits({});
+    
+    // Initialize splits for group members
+    if (groupId !== 'personal') {
+      const group = groupList.find(g => g.groupId === groupId);
+      if (group) {
+        const initialSplits: { [userId: string]: string } = {};
+        group.members.forEach(member => {
+          initialSplits[member.userId] = '';
+        });
+        setSplits(initialSplits);
+        
+        // Set first category if available
+        if (group.expenseCategories.length > 0) {
+          setCategoryId(group.expenseCategories[0].id);
+        }
+      }
+    } else {
+      // Set first personal category if available
+      if (expenseCategories.length > 0) {
+        setCategoryId(expenseCategories[0].id);
+      }
+    }
+  };
+
+  // Handle split value change
+  const handleSplitChange = (userId: string, value: string) => {
+    setSplits(prev => ({
+      ...prev,
+      [userId]: value
+    }));
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,30 +167,107 @@ const CreateExpensePage = () => {
     // Round up to next integer
     const roundedAmount = Math.ceil(amountValue);
 
+    // Additional validation for group expenses
+    if (selectedGroup !== 'personal') {
+      const group = getCurrentGroup();
+      if (!group) {
+        setError('Selected group not found');
+        return;
+      }
+
+      // Validate splits
+      const splitValues: { [userId: string]: number } = {};
+      let totalSplit = 0;
+      let hasInvalidSplit = false;
+
+      for (const [userId, value] of Object.entries(splits)) {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue) || numValue < 0) {
+          hasInvalidSplit = true;
+          break;
+        }
+        splitValues[userId] = splitType === 'EXACT' ? Math.ceil(numValue) : numValue;
+        totalSplit += splitValues[userId];
+      }
+
+      if (hasInvalidSplit) {
+        setError('Please enter valid split values for all members');
+        return;
+      }
+
+      if (splitType === 'EXACT' && totalSplit !== roundedAmount) {
+        setError(`Total split amount (${totalSplit}) must equal the expense amount (${roundedAmount})`);
+        return;
+      }
+
+      if (splitType === 'PERCENT' && totalSplit !== 100) {
+        setError(`Total split percentage (${totalSplit}%) must equal 100%`);
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
+      const userId = authStorage.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
       const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, API expects 1-12
+      const currentMonth = currentDate.getMonth() + 1;
       const currentYear = currentDate.getFullYear();
 
-      console.log('Creating expense with data:', {
-        categoryId,
-        amount: roundedAmount,
-        description: description.trim() || undefined,
-        tagId: selectedTagId || undefined,
-        month: currentMonth,
-        year: currentYear,
-      });
+      if (selectedGroup === 'personal') {
+        // Create personal expense
+        console.log('Creating personal expense with data:', {
+          categoryId,
+          amount: roundedAmount,
+          description: description.trim() || undefined,
+          tagId: selectedTagId || undefined,
+          month: currentMonth,
+          year: currentYear,
+        });
 
-      await expenseService.createExpense({
-        categoryId,
-        amount: roundedAmount,
-        description: description.trim() || undefined,
-        tagId: selectedTagId || undefined,
-        month: currentMonth,
-        year: currentYear,
-      });
+        await expenseService.createExpense({
+          categoryId,
+          amount: roundedAmount,
+          description: description.trim() || undefined,
+          tagId: selectedTagId || undefined,
+          month: currentMonth,
+          year: currentYear,
+        });
+      } else {
+        // Create group expense
+        const splitValues: { [userId: string]: number } = {};
+        for (const [userId, value] of Object.entries(splits)) {
+          splitValues[userId] = splitType === 'EXACT' ? Math.ceil(parseFloat(value)) : parseFloat(value);
+        }
+
+        console.log('Creating group expense with data:', {
+          paidByUserId: userId,
+          categoryId,
+          year: currentYear,
+          month: currentMonth,
+          amount: roundedAmount,
+          description: description.trim() || undefined,
+          tagId: selectedTagId || undefined,
+          splitType,
+          splits: splitValues,
+        });
+
+        await groupService.createGroupExpense(selectedGroup, {
+          paidByUserId: userId,
+          categoryId,
+          year: currentYear,
+          month: currentMonth,
+          amount: roundedAmount,
+          description: description.trim() || undefined,
+          tagId: selectedTagId || undefined,
+          splitType,
+          splits: splitValues,
+        });
+      }
 
       console.log('Expense created successfully');
       // Redirect to expense list page
@@ -186,6 +328,34 @@ const CreateExpensePage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="group" className="text-sm font-medium text-gray-700 pt-2">
+                Select Group
+              </label>
+              <div>
+                <select
+                  id="group"
+                  value={selectedGroup}
+                  onChange={(e) => handleGroupChange(e.target.value)}
+                  disabled={categoriesLoading}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
+                >
+                  <option value="personal">Personal expense</option>
+                  {groupList.map((group) => (
+                    <option key={group.groupId} value={group.groupId}>
+                      {group.groupName}
+                    </option>
+                  ))}
+                </select>
+                {selectedGroup !== 'personal' && (
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    {getCurrentGroup()?.groupDescription}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
               <label htmlFor="category" className="text-sm font-medium text-gray-700 pt-2">
                 Expense Category
               </label>
@@ -198,25 +368,25 @@ const CreateExpensePage = () => {
                     setCategoryId(e.target.value);
                     setSelectedTagId(''); // Reset tag selection when category changes
                   }}
-                  disabled={categoriesLoading || expenseCategories.length === 0}
+                  disabled={categoriesLoading || getAvailableCategories().length === 0}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
                 >
                   {categoriesLoading ? (
                     <option value="">Loading categories...</option>
-                  ) : expenseCategories.length === 0 ? (
+                  ) : getAvailableCategories().length === 0 ? (
                     <option value="">No categories available</option>
                   ) : (
-                    expenseCategories.map((cat) => (
+                    getAvailableCategories().map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.category}
                       </option>
                     ))
                   )}
                 </select>
-                {!categoriesLoading && expenseCategories.length > 0 && categoryId && (
+                {!categoriesLoading && getAvailableCategories().length > 0 && categoryId && (
                   <p className="text-sm text-gray-500 mt-1 text-left pl-1 capitalize">
-                    {expenseCategories.find(c => c.id === categoryId)?.description}
+                    {getAvailableCategories().find(c => c.id === categoryId)?.description}
                   </p>
                 )}
               </div>
@@ -240,14 +410,14 @@ const CreateExpensePage = () => {
             </div>
 
             {/* Tags Selection */}
-            {categoryId && expenseCategories.find(c => c.id === categoryId)?.tags && expenseCategories.find(c => c.id === categoryId)!.tags.length > 0 && (
+            {categoryId && getAvailableCategories().find(c => c.id === categoryId)?.tags && getAvailableCategories().find(c => c.id === categoryId)!.tags.length > 0 && (
               <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
                 <label className="text-sm font-medium text-gray-700 pt-2">
                   Select Tag (Optional)
                 </label>
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    {expenseCategories.find(c => c.id === categoryId)!.tags.map((tag) => (
+                    {getAvailableCategories().find(c => c.id === categoryId)!.tags.map((tag) => (
                       <button
                         key={tag.id}
                         type="button"
@@ -290,6 +460,66 @@ const CreateExpensePage = () => {
                 </p>
               </div>
             </div>
+
+            {/* Split Form for Group Expenses */}
+            {selectedGroup !== 'personal' && getCurrentGroup() && (
+              <>
+                <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                  <label htmlFor="splitType" className="text-sm font-medium text-gray-700 pt-2">
+                    Split Type
+                  </label>
+                  <div>
+                    <select
+                      id="splitType"
+                      value={splitType}
+                      onChange={(e) => setSplitType(e.target.value as 'EXACT' | 'PERCENT')}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                    >
+                      <option value="EXACT">Exact (Amount)</option>
+                      <option value="PERCENT">Percent (%)</option>
+                    </select>
+                    <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                      {splitType === 'EXACT' 
+                        ? 'Enter the exact amount each member owes' 
+                        : 'Enter the percentage each member owes (must total 100%)'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                  <label className="text-sm font-medium text-gray-700 pt-2">
+                    Split by Member
+                  </label>
+                  <div className="space-y-3">
+                    {getCurrentGroup()!.members.map((member) => (
+                      <div key={member.userId} className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-gray-700 w-40">
+                          {member.name}
+                        </label>
+                        <input
+                          type="number"
+                          value={splits[member.userId] || ''}
+                          onChange={(e) => handleSplitChange(member.userId, e.target.value)}
+                          step={splitType === 'EXACT' ? '0.01' : '0.1'}
+                          min="0"
+                          required
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-gray-900 bg-white"
+                          placeholder={splitType === 'EXACT' ? 'Amount' : 'Percentage'}
+                        />
+                        <span className="text-sm text-gray-600 w-8">
+                          {splitType === 'EXACT' ? '₹' : '%'}
+                        </span>
+                      </div>
+                    ))}
+                    <p className="text-sm text-gray-500 mt-2 text-left pl-1">
+                      {splitType === 'EXACT' 
+                        ? `Total must equal ${amount ? Math.ceil(parseFloat(amount)) : 0} ₹` 
+                        : 'Total must equal 100%'}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {error && (
               <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm">

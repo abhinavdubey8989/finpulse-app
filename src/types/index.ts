@@ -187,3 +187,19 @@ export interface CreateGroupResponse {
   id: string;
   failedMemberIds: string[];
 }
+
+export interface CreateGroupExpenseRequest {
+  paidByUserId: string;
+  categoryId: string;
+  year: number;
+  month: number;
+  amount: number;
+  description?: string;
+  tagId?: string;
+  splitType: 'EXACT' | 'PERCENT';
+  splits: { [userId: string]: number };
+}
+
+export interface CreateGroupExpenseResponse {
+  id: string;
+}
