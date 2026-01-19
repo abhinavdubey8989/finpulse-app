@@ -20,20 +20,15 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      console.log('Attempting login with:', { email, rememberMe });
-      
       // Hash the password before sending
       const hashedPassword = md5(password);
       
       // Call the login API
       await authService.login(email, hashedPassword);
       
-      console.log('Login successful, navigating to create expense page');
-      
       // Navigate to create expense page on success
       navigate('/create-expense');
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);

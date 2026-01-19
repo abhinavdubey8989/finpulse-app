@@ -34,6 +34,7 @@ const CreateExpensePage = () => {
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategoryItem[]>([]);
   const [groupList, setGroupList] = useState<GroupAndCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -45,31 +46,26 @@ const CreateExpensePage = () => {
     // Check authentication status on mount and fetch expense categories
     const token = authStorage.getToken();
     const userId = authStorage.getUserId();
-    console.log('CreateExpensePage mounted - Auth check:');
-    console.log('  Token:', token);
-    console.log('  UserId:', userId);
     
     if (!token || !userId) {
-      console.error('Not authenticated on CreateExpensePage mount, redirecting to login');
       navigate('/', { replace: true });
       return;
     }
+
+    setUserName(authStorage.getUserName());
 
     // Fetch group configuration and expense categories
     const fetchData = async () => {
       try {
         setCategoriesLoading(true);
-        console.log('Fetching data for userId:', userId);
         
         // Fetch group configuration (includes groups and personal categories)
         const configData = await groupService.getGroupConfiguration(userId);
-        console.log('Received group configuration:', configData);
         
         setGroupList(configData.groupAndCategoryList);
         
         // Fetch personal expense categories
         const settings = await userSettingsService.getUserSettings(userId);
-        console.log('Received personal expense categories:', settings.expenseCategories);
         
         setExpenseCategories(settings.expenseCategories);
         
@@ -78,7 +74,6 @@ const CreateExpensePage = () => {
           setCategoryId(settings.expenseCategories[0].id);
         }
       } catch (err: any) {
-        console.error('Error fetching data:', err);
         setError('Failed to load data. Please try again.');
       } finally {
         setCategoriesLoading(false);
@@ -144,8 +139,6 @@ const CreateExpensePage = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-
-    console.log('Form submitted');
 
     // Validation: User must select a tag or enter description (or both)
     if (!selectedTagId && (!description || description.trim().length === 0)) {
@@ -220,15 +213,6 @@ const CreateExpensePage = () => {
 
       if (selectedGroup === 'personal') {
         // Create personal expense
-        console.log('Creating personal expense with data:', {
-          categoryId,
-          amount: roundedAmount,
-          description: description.trim() || undefined,
-          tagId: selectedTagId || undefined,
-          month: currentMonth,
-          year: currentYear,
-        });
-
         await expenseService.createExpense({
           categoryId,
           amount: roundedAmount,
@@ -244,18 +228,6 @@ const CreateExpensePage = () => {
           splitValues[userId] = splitType === 'EXACT' ? Math.ceil(parseFloat(value)) : parseFloat(value);
         }
 
-        console.log('Creating group expense with data:', {
-          paidByUserId: userId,
-          categoryId,
-          year: currentYear,
-          month: currentMonth,
-          amount: roundedAmount,
-          description: description.trim() || undefined,
-          tagId: selectedTagId || undefined,
-          splitType,
-          splits: splitValues,
-        });
-
         await groupService.createGroupExpense(selectedGroup, {
           paidByUserId: userId,
           categoryId,
@@ -269,11 +241,9 @@ const CreateExpensePage = () => {
         });
       }
 
-      console.log('Expense created successfully');
       // Redirect to expense list page
       navigate('/expenses');
     } catch (err: any) {
-      console.error('Error creating expense:', err);
       setError(err.message || err.response?.data?.message || 'Failed to create expense. Please try again.');
     } finally {
       setIsLoading(false);
@@ -282,6 +252,9 @@ const CreateExpensePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {userName && (
+        <p className="text-lg text-gray-600 text-center mb-4">Hi {userName}</p>
+      )}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="flex justify-between items-center mb-6">
@@ -364,7 +337,6 @@ const CreateExpensePage = () => {
                   id="category"
                   value={categoryId}
                   onChange={(e) => {
-                    console.log('Category changed to:', e.target.value);
                     setCategoryId(e.target.value);
                     setSelectedTagId(''); // Reset tag selection when category changes
                   }}

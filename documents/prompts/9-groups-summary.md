@@ -380,3 +380,114 @@ curl --location 'http://localhost:8055/api/v1/group/52cc9664-e530-4dee-a23d-69f8
 
 
 # Summary page
+- Update the expense summary page, the default sorting order must be `Percent spent (highest to lowest)`
+
+- Update the expense summary page, in the left of year, add another drop down for group
+- The options in this drop down will be Personal + list of groups in `/group/configure/<userId>`
+- When user select a group, you need to call the below API to get expense summary of group
+- Update the cards for each expense category accordingly
+
+- Display the `userAmountBreakup` on the cards for group expense summary instead of `tagBreakup`
+- In the format <User-name> : <Amount>
+- Amount is present at `apiData.elements[i].userAmountBreakup[j].expenseAmount`
+- User-id is present at `apiData.elements[i].userAmountBreakup[j].userId`
+- This user-id is to be converted to user-name
+- User-name is present at `apiData.users.<userId>.name`
+
+- Also, on the summary page, when displaying summary for a group, you also need to add cards for users
+- Each card must be collapsable, when collapsed, it just shows the `expenseCount` & `totalExpenseAmount`
+- When expanded it shows credit & debit breakdown using `debitAmounts` & `creditAmounts` for each user in the format <user-name> : <credit/debit amount>
+- use red for debit & green for credit
+- After user-cards, show a divider & then display the category-wise cards (like it is shown currently)
+
+- Each user has a `creditAmounts` map & `debitAmounts`, 
+- so on the card of that user, only that user's `creditAmounts` map & `debitAmounts` is to be displayed
+
+
+
+```
+curl --location 'http://localhost:8055/api/v1/group/52cc9664-e530-4dee-a23d-69f84c4c66fc/summary' \
+--header 'Authorization: Bearer <access-token>' \
+--header 'Content-Type: application/json' \
+--header 'Cookie: JSESSIONID=16E9A953DDCB395ECC9AC475AFDBB9BB' \
+--data '{
+    "year": 2026,
+    "month": 1
+}'
+```
+
+```
+{
+    "apiData": {
+        "elements": [
+            {
+                "category": "shoppinggg-123",
+                "categoryDescription": "updated",
+                "categoryId": "47adac0e-3280-4264-83be-75bfc4299aa6",
+                "monthlyExpenseDone": 3245,
+                "monthlyUpperLimit": 1000,
+                "tagBreakup": [
+                    {
+                        "expenseAmount": 0,
+                        "id": "5e932388-8569-4a28-8eca-637d47482693",
+                        "name": "ola"
+                    },
+                    {
+                        "expenseAmount": 56,
+                        "id": "abd3f490-80d3-47a9-a0a6-871d1465ee43",
+                        "name": "uber"
+                    },
+                    {
+                        "expenseAmount": 0,
+                        "id": "6d07bab5-bd3e-4e4e-8737-04b77e3323ed",
+                        "name": "aaa"
+                    },
+                    {
+                        "expenseAmount": 89,
+                        "id": "eba0a433-9c16-46c7-ba32-4f465412b918",
+                        "name": "bbb"
+                    },
+                    {
+                        "expenseAmount": 3100,
+                        "id": "Others",
+                        "name": "Others"
+                    }
+                ],
+                "userAmountBreakup": [
+                    {
+                        "expenseAmount": 3245,
+                        "userId": "550e8400-e29b-41d4-a716-446655440000"
+                    }
+                ]
+            }
+        ],
+        "month": 1,
+        "numberOfExpenses": 6,
+        "totalExpenseAmount": 3245,
+        "users": {
+            "d33a3a27-8cbd-41e1-afd1-efa7760a7ced": {
+                "creditAmounts": {},
+                "debitAmounts": {
+                    "550e8400-e29b-41d4-a716-446655440000": 2354
+                },
+                "emailId": "maitry@example.com",
+                "expenseCount": 0,
+                "name": "Maitry",
+                "totalExpenseAmount": 0
+            },
+            "550e8400-e29b-41d4-a716-446655440000": {
+                "creditAmounts": {
+                    "d33a3a27-8cbd-41e1-afd1-efa7760a7ced": 2354
+                },
+                "debitAmounts": {},
+                "emailId": "abhinav@example.com",
+                "expenseCount": 6,
+                "name": "Abhinav",
+                "totalExpenseAmount": 3245
+            }
+        },
+        "year": 2026
+    },
+    "respId": ""
+}
+```

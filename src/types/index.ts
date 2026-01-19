@@ -13,6 +13,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   userId: string;
+  userName?: string;
   personalExpenseSettings: unknown[];
 }
 
@@ -215,4 +216,37 @@ export interface CreateGroupExpenseCategoryRequest {
 export interface CreateGroupExpenseCategoryResponse {
   id: string;
   failedAddTags: string[];
+}
+
+export interface GroupSummaryRequest {
+  year: number;
+  month: number;
+}
+
+export interface UserAmountBreakup {
+  userId: string;
+  expenseAmount: number;
+}
+
+export interface GroupUser {
+  userId?: string;
+  name: string;
+  emailId: string;
+  expenseCount: number;
+  totalExpenseAmount: number;
+  creditAmounts: { [userId: string]: number };
+  debitAmounts: { [userId: string]: number };
+}
+
+export interface GroupSummaryElement extends ExpenseSummaryElement {
+  userAmountBreakup: UserAmountBreakup[];
+}
+
+export interface GroupSummaryResponse {
+  elements: GroupSummaryElement[];
+  month: number;
+  year: number;
+  numberOfExpenses: number;
+  totalExpenseAmount: number;
+  users: { [userId: string]: GroupUser };
 }

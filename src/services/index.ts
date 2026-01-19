@@ -19,42 +19,28 @@ export const authService = {
       } as LoginRequest
     );
     
-    console.log('Login API full response:', response);
-    console.log('Login API response.data:', response.data);
-    
-    // Get data from response.data.apiData
     const loginData = response.data.apiData;
     
-    console.log('Extracted login data:', loginData);
-    
     if (!loginData) {
-      console.error('No login data found in response');
       throw new Error('Invalid API response structure');
     }
     
-    const { accessToken, userId } = loginData;
-    
-    console.log('Extracted accessToken:', accessToken);
-    console.log('Extracted userId:', userId, 'type:', typeof userId);
+    const { accessToken, userId, userName } = loginData;
     
     if (!accessToken || !userId) {
-      console.error('Invalid response: missing accessToken or userId', loginData);
       throw new Error('Invalid response: missing accessToken or userId');
     }
     
-    // Store userId as string
     authStorage.setToken(accessToken);
     authStorage.setUserId(String(userId));
+    if (userName) {
+      authStorage.setUserName(userName);
+    }
     
-    // Verify storage immediately
     const storedToken = authStorage.getToken();
     const storedUserId = authStorage.getUserId();
-    console.log('Verification after storage:');
-    console.log('  - stored token:', storedToken);
-    console.log('  - stored userId:', storedUserId);
     
     if (!storedToken || !storedUserId) {
-      console.error('Failed to store auth data in localStorage');
       throw new Error('Failed to store authentication data');
     }
     
@@ -71,10 +57,8 @@ export const expenseService = {
     expenseData: Omit<CreateExpenseRequest, 'userId'>
   ): Promise<CreateExpenseResponse> => {
     const userId = authStorage.getUserId();
-    console.log('Creating expense - userId from storage:', userId);
     
     if (!userId) {
-      console.error('User not authenticated - no userId in localStorage');
       throw new Error('User not authenticated');
     }
 
@@ -82,14 +66,12 @@ export const expenseService = {
       userId,
       ...expenseData,
     };
-    console.log('Sending create expense request:', payload);
 
     const response = await apiClient.post<ApiResponse<CreateExpenseResponse>>(
       '/expense/personal',
       payload
     );
     
-    console.log('Create expense response:', response.data);
     return response.data.apiData;
   },
 
@@ -192,6 +174,15 @@ export const groupService = {
     const response = await apiClient.post<ApiResponse<import('../types').CreateGroupExpenseCategoryResponse>>(
       `/group/${groupId}/expense-category`,
       categoryData
+    );
+    
+    return response.data.apiData;
+  },
+
+  getGroupSummary: async (groupId: string, summaryRequest: import('../types').GroupSummaryRequest) => {
+    const response = await apiClient.post<ApiResponse<import('../types').GroupSummaryResponse>>(
+      `/group/${groupId}/summary`,
+      summaryRequest
     );
     
     return response.data.apiData;

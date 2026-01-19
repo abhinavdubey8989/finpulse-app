@@ -13,6 +13,7 @@ const CreateGroupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,29 +25,24 @@ const CreateGroupPage = () => {
     // Check authentication status on mount and fetch available users
     const token = authStorage.getToken();
     const userId = authStorage.getUserId();
-    console.log('CreateGroupPage mounted - Auth check:');
-    console.log('  Token:', token);
-    console.log('  UserId:', userId);
     
     if (!token || !userId) {
-      console.error('Not authenticated on CreateGroupPage mount, redirecting to login');
       navigate('/', { replace: true });
       return;
     }
+
+    setUserName(authStorage.getUserName());
 
     // Fetch available users for group members
     const fetchUsers = async () => {
       try {
         setUsersLoading(true);
-        console.log('Fetching users for userId:', userId);
         const configData = await groupService.getGroupConfiguration(userId);
-        console.log('Received users:', configData.allUsers);
         
         // Filter out the current user from the members list
         const filteredUsers = configData.allUsers.filter(user => user.userId !== userId);
         setUsers(filteredUsers);
       } catch (err: any) {
-        console.error('Error fetching users:', err);
         setError('Failed to load users. Please try again.');
       } finally {
         setUsersLoading(false);
@@ -67,8 +63,6 @@ const CreateGroupPage = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-
-    console.log('Form submitted');
 
     // Validation
     if (name.trim().length < 4) {
@@ -94,13 +88,6 @@ const CreateGroupPage = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Creating group with data:', {
-        createdBy: userId,
-        name: name.trim(),
-        description: description.trim(),
-        memberUserIds: selectedMemberIds,
-      });
-
       const response = await groupService.createGroup({
         createdBy: userId,
         name: name.trim(),
@@ -108,16 +95,9 @@ const CreateGroupPage = () => {
         memberUserIds: selectedMemberIds,
       });
 
-      console.log('Group created successfully:', response);
-      
-      if (response.failedMemberIds.length > 0) {
-        console.warn('Some members could not be added:', response.failedMemberIds);
-      }
-
       // Redirect to add expense page after successful group creation
       navigate('/create-expense');
     } catch (err: any) {
-      console.error('Error creating group:', err);
       setError(err.message || err.response?.data?.message || 'Failed to create group. Please try again.');
     } finally {
       setIsLoading(false);
@@ -126,6 +106,9 @@ const CreateGroupPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {userName && (
+        <p className="text-lg text-gray-600 text-center mb-4">Hi {userName}</p>
+      )}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="flex justify-between items-center mb-6">

@@ -20,6 +20,7 @@ const CreateExpenseCategoryPage = () => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategoryItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -49,14 +50,11 @@ const CreateExpenseCategoryPage = () => {
     // Check authentication status on mount
     const token = authStorage.getToken();
     const userId = authStorage.getUserId();
-    console.log('CreateExpenseCategoryPage mounted - Auth check:');
-    console.log('  Token:', token);
-    console.log('  UserId:', userId);
     
     if (!token || !userId) {
-      console.error('Not authenticated on CreateExpenseCategoryPage mount, redirecting to login');
       navigate('/', { replace: true });
     } else {
+      setUserName(authStorage.getUserName());
       // Fetch existing categories and groups
       fetchData();
     }
@@ -72,16 +70,12 @@ const CreateExpenseCategoryPage = () => {
 
       // Fetch personal categories
       const settingsData = await userSettingsService.getUserSettings(userId);
-      console.log('Personal categories fetched:', settingsData.expenseCategories);
       setExistingCategories(settingsData.expenseCategories || []);
 
       // Fetch groups
       const configData = await groupService.getGroupConfiguration(userId);
-      console.log('Group configuration fetched:', configData);
-      console.log('Group list:', configData.groupAndCategoryList);
       setGroupList(configData.groupAndCategoryList);
     } catch (err: any) {
-      console.error('Error fetching data:', err);
       setError(err.message || 'Failed to load data');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -100,7 +94,6 @@ const CreateExpenseCategoryPage = () => {
       const settingsData = await userSettingsService.getUserSettings(userId);
       setExistingCategories(settingsData.expenseCategories || []);
     } catch (err: any) {
-      console.error('Error fetching categories:', err);
       setError(err.message || 'Failed to load categories');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -111,21 +104,15 @@ const CreateExpenseCategoryPage = () => {
   // Get categories based on selected group
   const getDisplayCategories = (): ExpenseCategoryItem[] => {
     if (selectedGroup === 'personal') {
-      console.log('Displaying personal categories:', existingCategories);
       return existingCategories;
     }
     const group = groupList.find(g => g.groupId === selectedGroup);
-    console.log('Selected group:', selectedGroup);
-    console.log('Found group:', group);
-    console.log('Group categories:', group?.expenseCategories);
     return group ? group.expenseCategories : [];
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-
-    console.log('Form submitted');
 
     // Validation
     if (category.length < 4) {
@@ -156,13 +143,6 @@ const CreateExpenseCategoryPage = () => {
 
       if (selectedGroup === 'personal') {
         // Create personal expense category
-        console.log('Creating personal expense category with data:', {
-          categoryName: category,
-          description,
-          monthlyUpperLimit: limitValue,
-          addTags: tags.length > 0 ? tags : undefined,
-        });
-
         response = await userSettingsService.createExpenseCategory(userId, {
           categoryName: category,
           description,
@@ -171,14 +151,6 @@ const CreateExpenseCategoryPage = () => {
         });
       } else {
         // Create group expense category
-        console.log('Creating group expense category with data:', {
-          userId,
-          categoryName: category,
-          description,
-          monthlyUpperLimit: limitValue,
-          addTags: tags.length > 0 ? tags : undefined,
-        });
-
         response = await groupService.createGroupExpenseCategory(selectedGroup, {
           userId,
           categoryName: category,
@@ -188,8 +160,6 @@ const CreateExpenseCategoryPage = () => {
         });
       }
 
-      console.log('Expense category created successfully');
-      
       // Show toast if some tags failed to add
       if (response.failedAddTags && response.failedAddTags.length > 0) {
         const failedTagsList = response.failedAddTags.join(', ');
@@ -209,7 +179,6 @@ const CreateExpenseCategoryPage = () => {
       setToast('Category created successfully!');
       setTimeout(() => setToast(''), 3000);
     } catch (err: any) {
-      console.error('Error creating expense category:', err);
       setError(err.message || err.response?.data?.message || 'Failed to create expense category. Please try again.');
     } finally {
       setIsLoading(false);
@@ -228,6 +197,9 @@ const CreateExpenseCategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {userName && (
+        <p className="text-lg text-gray-600 text-center mb-4">Hi {userName}</p>
+      )}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="flex justify-between items-center mb-6">
@@ -618,7 +590,6 @@ const EditCategoryModal = ({ category, onClose, onSuccess }: EditCategoryModalPr
 
       onSuccess();
     } catch (err: any) {
-      console.error('Error updating expense category:', err);
       setError(err.message || err.response?.data?.message || 'Failed to update expense category. Please try again.');
     } finally {
       setIsLoading(false);
