@@ -90,7 +90,7 @@ export interface UserSettingsResponse {
 }
 
 export interface CreateExpenseCategoryRequest {
-  category: string;
+  categoryName: string;
   description: string;
   monthlyUpperLimit: number;
   addTags?: string[];
