@@ -4,22 +4,6 @@ import { expenseService, authService, userSettingsService } from '../services';
 import type { Expense, ExpenseCategoryItem, UpdateExpenseRequest } from '../types';
 import { authStorage } from '../utils/authStorage';
 
-// Map month number to month name
-const MONTH_NAMES: { [key: number]: string } = {
-  1: 'January',
-  2: 'February',
-  3: 'March',
-  4: 'April',
-  5: 'May',
-  6: 'June',
-  7: 'July',
-  8: 'August',
-  9: 'September',
-  10: 'October',
-  11: 'November',
-  12: 'December'
-};
-
 const ExpenseListPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,9 +11,11 @@ const ExpenseListPage = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setUserName(authStorage.getUserName());
     fetchExpenses();
   }, []);
 
@@ -108,6 +94,9 @@ const ExpenseListPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {userName && (
+        <p className="text-lg text-gray-600 text-center mb-4">Hi {userName}</p>
+      )}
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -124,6 +113,12 @@ const ExpenseListPage = () => {
                 className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
               >
                 + Add Category
+              </button>
+              <button
+                onClick={() => navigate('/create-group')}
+                className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition"
+              >
+                + Add Group
               </button>
               <button
                 onClick={() => navigate('/create-expense')}
@@ -284,7 +279,6 @@ const EditExpenseModal = ({ expense, onClose, onSuccess }: EditExpenseModalProps
         const settings = await userSettingsService.getUserSettings(userId);
         setExpenseCategories(settings.expenseCategories);
       } catch (err: any) {
-        console.error('Error fetching expense categories:', err);
         setError('Failed to load expense categories.');
       } finally {
         setCategoriesLoading(false);
@@ -331,7 +325,6 @@ const EditExpenseModal = ({ expense, onClose, onSuccess }: EditExpenseModalProps
       await expenseService.updateExpense(String(expense.id), updateData);
       onSuccess();
     } catch (err: any) {
-      console.error('Error updating expense:', err);
       setError(err.message || err.response?.data?.message || 'Failed to update expense. Please try again.');
     } finally {
       setIsLoading(false);

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import CreateExpensePage from './pages/CreateExpensePage';
 import CreateExpenseCategoryPage from './pages/CreateExpenseCategoryPage';
+import CreateGroupPage from './pages/CreateGroupPage';
 import ExpenseListPage from './pages/ExpenseListPage';
 import ExpenseSummaryPage from './pages/ExpenseSummaryPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateExpenseCategoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-group"
+          element={
+            <ProtectedRoute>
+              <CreateGroupPage />
             </ProtectedRoute>
           }
         />

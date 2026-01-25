@@ -13,6 +13,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   userId: string;
+  userName?: string;
   personalExpenseSettings: unknown[];
 }
 
@@ -90,7 +91,7 @@ export interface UserSettingsResponse {
 }
 
 export interface CreateExpenseCategoryRequest {
-  category: string;
+  categoryName: string;
   description: string;
   monthlyUpperLimit: number;
   addTags?: string[];
@@ -146,4 +147,106 @@ export interface ExpenseSummaryResponse {
   totalExpenseAmount: number;
   userId: string;
   year: number;
+}
+
+// Group types
+export interface User {
+  userId: string;
+  name: string;
+  emailId: string;
+}
+
+export interface GroupExpenseCategory {
+  id: string;
+  category: string;
+  description: string;
+  monthlyUpperLimit: number;
+  tags: Tag[];
+}
+
+export interface GroupAndCategory {
+  groupId: string;
+  groupName: string;
+  groupDescription: string;
+  members: User[];
+  expenseCategories: GroupExpenseCategory[];
+}
+
+export interface ConfigureGroupResponse {
+  allUsers: User[];
+  groupAndCategoryList: GroupAndCategory[];
+}
+
+export interface CreateGroupRequest {
+  createdBy: string;
+  name: string;
+  description: string;
+  memberUserIds: string[];
+}
+
+export interface CreateGroupResponse {
+  id: string;
+  failedMemberIds: string[];
+}
+
+export interface CreateGroupExpenseRequest {
+  paidByUserId: string;
+  categoryId: string;
+  year: number;
+  month: number;
+  amount: number;
+  description?: string;
+  tagId?: string;
+  splitType: 'EXACT' | 'PERCENT';
+  splits: { [userId: string]: number };
+}
+
+export interface CreateGroupExpenseResponse {
+  id: string;
+}
+
+export interface CreateGroupExpenseCategoryRequest {
+  userId: string;
+  categoryName: string;
+  description: string;
+  monthlyUpperLimit: number;
+  addTags?: string[];
+}
+
+export interface CreateGroupExpenseCategoryResponse {
+  id: string;
+  failedAddTags: string[];
+}
+
+export interface GroupSummaryRequest {
+  year: number;
+  month: number;
+}
+
+export interface UserAmountBreakup {
+  userId: string;
+  expenseAmount: number;
+}
+
+export interface GroupUser {
+  userId?: string;
+  name: string;
+  emailId: string;
+  expenseCount: number;
+  totalExpenseAmount: number;
+  creditAmounts: { [userId: string]: number };
+  debitAmounts: { [userId: string]: number };
+}
+
+export interface GroupSummaryElement extends ExpenseSummaryElement {
+  userAmountBreakup: UserAmountBreakup[];
+}
+
+export interface GroupSummaryResponse {
+  elements: GroupSummaryElement[];
+  month: number;
+  year: number;
+  numberOfExpenses: number;
+  totalExpenseAmount: number;
+  users: { [userId: string]: GroupUser };
 }

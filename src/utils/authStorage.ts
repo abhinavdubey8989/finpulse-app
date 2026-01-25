@@ -1,9 +1,9 @@
 const TOKEN_KEY = 'accessToken';
 const USER_ID_KEY = 'userId';
+const USER_NAME_KEY = 'userName';
 
 export const authStorage = {
   setToken: (token: string): void => {
-    console.log('Setting token in localStorage');
     localStorage.setItem(TOKEN_KEY, token);
   },
 
@@ -13,7 +13,6 @@ export const authStorage = {
   },
 
   setUserId: (userId: string): void => {
-    console.log('Setting userId in localStorage:', userId);
     localStorage.setItem(USER_ID_KEY, userId);
   },
 
@@ -22,9 +21,19 @@ export const authStorage = {
     return userId;
   },
 
+  setUserName: (userName: string): void => {
+    localStorage.setItem(USER_NAME_KEY, userName);
+  },
+
+  getUserName: (): string | null => {
+    const userName = localStorage.getItem(USER_NAME_KEY);
+    return userName;
+  },
+
   clearAuth: (): void => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_ID_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
   },
 
   isAuthenticated: (): boolean => {

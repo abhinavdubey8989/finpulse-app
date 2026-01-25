@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userSettingsService } from '../services';
+import { userSettingsService, groupService } from '../services';
 import { authStorage } from '../utils/authStorage';
-import type { ExpenseCategoryItem, UpdateExpenseCategoryRequest } from '../types';
+import type { ExpenseCategoryItem, UpdateExpenseCategoryRequest, GroupAndCategory } from '../types';
 
 const CreateExpenseCategoryPage = () => {
+  const [selectedGroup, setSelectedGroup] = useState<string>('personal');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [monthlyUpperLimit, setMonthlyUpperLimit] = useState('');
@@ -15,9 +16,11 @@ const CreateExpenseCategoryPage = () => {
   const [toast, setToast] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [existingCategories, setExistingCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [groupList, setGroupList] = useState<GroupAndCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ExpenseCategoryItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -47,18 +50,38 @@ const CreateExpenseCategoryPage = () => {
     // Check authentication status on mount
     const token = authStorage.getToken();
     const userId = authStorage.getUserId();
-    console.log('CreateExpenseCategoryPage mounted - Auth check:');
-    console.log('  Token:', token);
-    console.log('  UserId:', userId);
     
     if (!token || !userId) {
-      console.error('Not authenticated on CreateExpenseCategoryPage mount, redirecting to login');
       navigate('/', { replace: true });
     } else {
-      // Fetch existing categories
-      fetchExistingCategories();
+      setUserName(authStorage.getUserName());
+      // Fetch existing categories and groups
+      fetchData();
     }
   }, [navigate]);
+
+  const fetchData = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const userId = authStorage.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Fetch personal categories
+      const settingsData = await userSettingsService.getUserSettings(userId);
+      setExistingCategories(settingsData.expenseCategories || []);
+
+      // Fetch groups
+      const configData = await groupService.getGroupConfiguration(userId);
+      setGroupList(configData.groupAndCategoryList);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load data');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
 
   const fetchExistingCategories = async () => {
     setIsLoadingCategories(true);
@@ -71,7 +94,6 @@ const CreateExpenseCategoryPage = () => {
       const settingsData = await userSettingsService.getUserSettings(userId);
       setExistingCategories(settingsData.expenseCategories || []);
     } catch (err: any) {
-      console.error('Error fetching categories:', err);
       setError(err.message || 'Failed to load categories');
       setTimeout(() => setError(''), 3000);
     } finally {
@@ -79,11 +101,18 @@ const CreateExpenseCategoryPage = () => {
     }
   };
 
+  // Get categories based on selected group
+  const getDisplayCategories = (): ExpenseCategoryItem[] => {
+    if (selectedGroup === 'personal') {
+      return existingCategories;
+    }
+    const group = groupList.find(g => g.groupId === selectedGroup);
+    return group ? group.expenseCategories : [];
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-
-    console.log('Form submitted');
 
     // Validation
     if (category.length < 4) {
@@ -110,22 +139,27 @@ const CreateExpenseCategoryPage = () => {
         throw new Error('User not authenticated');
       }
 
-      console.log('Creating expense category with data:', {
-        category,
-        description,
-        monthlyUpperLimit: limitValue,
-        addTags: tags.length > 0 ? tags : undefined,
-      });
+      let response;
 
-      const response = await userSettingsService.createExpenseCategory(userId, {
-        category,
-        description,
-        monthlyUpperLimit: limitValue,
-        ...(tags.length > 0 && { addTags: tags }),
-      });
+      if (selectedGroup === 'personal') {
+        // Create personal expense category
+        response = await userSettingsService.createExpenseCategory(userId, {
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          ...(tags.length > 0 && { addTags: tags }),
+        });
+      } else {
+        // Create group expense category
+        response = await groupService.createGroupExpenseCategory(selectedGroup, {
+          userId,
+          categoryName: category,
+          description,
+          monthlyUpperLimit: limitValue,
+          ...(tags.length > 0 && { addTags: tags }),
+        });
+      }
 
-      console.log('Expense category created successfully');
-      
       // Show toast if some tags failed to add
       if (response.failedAddTags && response.failedAddTags.length > 0) {
         const failedTagsList = response.failedAddTags.join(', ');
@@ -139,13 +173,12 @@ const CreateExpenseCategoryPage = () => {
       setMonthlyUpperLimit('');
       setTags([]);
       
-      // Refresh categories list
-      fetchExistingCategories();
+      // Refresh data
+      fetchData();
       
       setToast('Category created successfully!');
       setTimeout(() => setToast(''), 3000);
     } catch (err: any) {
-      console.error('Error creating expense category:', err);
       setError(err.message || err.response?.data?.message || 'Failed to create expense category. Please try again.');
     } finally {
       setIsLoading(false);
@@ -164,6 +197,9 @@ const CreateExpenseCategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {userName && (
+        <p className="text-lg text-gray-600 text-center mb-4">Hi {userName}</p>
+      )}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="flex justify-between items-center mb-6">
@@ -174,6 +210,12 @@ const CreateExpenseCategoryPage = () => {
                 className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
               >
                 + Add Category
+              </button>
+              <button
+                onClick={() => navigate('/create-group')}
+                className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition"
+              >
+                + Add Group
               </button>
               <button
                 onClick={() => navigate('/create-expense')}
@@ -204,6 +246,34 @@ const CreateExpenseCategoryPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+              <label htmlFor="group" className="text-sm font-medium text-gray-700 pt-2">
+                Select Group
+              </label>
+              <div>
+                <select
+                  id="group"
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                  disabled={isLoadingCategories}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 bg-white capitalize"
+                >
+                  <option value="personal">Personal expense</option>
+                  {groupList.map((group) => (
+                    <option key={group.groupId} value={group.groupId}>
+                      {group.groupName}
+                    </option>
+                  ))}
+                </select>
+                {selectedGroup !== 'personal' && (
+                  <p className="text-sm text-gray-500 mt-1 text-left pl-1">
+                    {groupList.find(g => g.groupId === selectedGroup)?.groupDescription}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
               <label htmlFor="category" className="text-sm font-medium text-gray-700 pt-2">
                 Category Name
               </label>
@@ -223,7 +293,6 @@ const CreateExpenseCategoryPage = () => {
                 </p> */}
               </div>
             </div>
-
             <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
               <label htmlFor="description" className="text-sm font-medium text-gray-700 pt-2">
                 Description
@@ -339,14 +408,21 @@ const CreateExpenseCategoryPage = () => {
         </div>
 
         {/* Existing Categories */}
-        {existingCategories.length > 0 && (
+        {getDisplayCategories().length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-8 mt-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Existing Categories</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              Existing Categories
+              {selectedGroup !== 'personal' && (
+                <span className="text-lg font-normal text-gray-600 ml-2">
+                  ({groupList.find(g => g.groupId === selectedGroup)?.groupName})
+                </span>
+              )}
+            </h2>
             {isLoadingCategories ? (
               <div className="text-center text-gray-600">Loading categories...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {existingCategories.map((cat) => (
+                {getDisplayCategories().map((cat) => (
                   <div
                     key={cat.id}
                     className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow relative"
@@ -514,7 +590,6 @@ const EditCategoryModal = ({ category, onClose, onSuccess }: EditCategoryModalPr
 
       onSuccess();
     } catch (err: any) {
-      console.error('Error updating expense category:', err);
       setError(err.message || err.response?.data?.message || 'Failed to update expense category. Please try again.');
     } finally {
       setIsLoading(false);
