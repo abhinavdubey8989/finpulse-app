@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finpulse-app
+  namespace: default
+  labels:
+    app: finpulse-app
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: finpulse-app
+  template:
+    metadata:
+      labels:
+        app: finpulse-app
+        version: v1
+    spec:
+      containers:
+      - name: finpulse-app
+        image: finpulse-app:latest  # Update with your registry/image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        env:
+        - name: VITE_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: finpulse-app-config
+              key: VITE_API_BASE_URL
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      restartPolicy: Always
