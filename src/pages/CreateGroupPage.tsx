@@ -88,7 +88,7 @@ const CreateGroupPage = () => {
         throw new Error('User not authenticated');
       }
 
-      const response = await groupService.createGroup({
+      await groupService.createGroup({
         createdBy: userId,
         name: name.trim(),
         description: description.trim(),
