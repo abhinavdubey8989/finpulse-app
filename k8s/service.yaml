@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: finpulse-app-service
+  namespace: default
+  labels:
+    app: finpulse-app
+spec:
+  type: ClusterIP
+  selector:
+    app: finpulse-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  sessionAffinity: None
+
+---
+# Optional: LoadBalancer service for external access
+# Uncomment if you want to expose the app externally via LoadBalancer
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: finpulse-app-lb
+#   namespace: default
+#   labels:
+#     app: finpulse-app
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     app: finpulse-app
+#   ports:
+#   - name: http
+#     port: 80
+#     targetPort: 80
+#     protocol: TCP
